@@ -1,0 +1,13 @@
+# segredos e sessões
+config.secrets.js
+cookies.json
+
+# planilhas e dados sensíveis
+docs/
+Docs/
+
+# logs
+logs/
+
+# outros
+node_modules/
