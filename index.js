@@ -71,7 +71,7 @@ let ultimoProcessado = null; // Guarda o ultimo aluno processado com sucesso
         const invalido = !aluno || typeof aluno !== "object";
         if (invalido || jaProcessado) {
           logger.info(
-            `⏭️ Pulando aluno no índice ${index}: já processado ou inválido.`
+            `⏭️  Pulando aluno no índice ${index}: já processado ou inválido.`
           );
           continue;
         }

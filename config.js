@@ -1,6 +1,6 @@
 // config.js (Configurações gerais da automação)
 
-import { SECRETS } from "./config.secrets";
+import { SECRETS } from "./config.secrets.js";
 
 // Exporta objeto de configuração central usado por toda a aplicação
 export const CONFIG = {
