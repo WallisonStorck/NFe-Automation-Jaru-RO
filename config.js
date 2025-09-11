@@ -32,7 +32,7 @@ export const CONFIG = {
   //         Ideal para depuração, testes manuais ou inspeção do modal.
   //         Também NÃO redireciona automaticamente para nova emissão.
   // - false: Clica no botão "SIM" e redireciona automaticamente para uma nova nota.
-  SKIP_CONFIRMATION: false,
+  SKIP_CONFIRMATION: true,
 
   // 🧪 TEST_MODE:
   // - true: Processa apenas 1 aluno — o primeiro que tiver "PROCESSADO" diferente de "SIM" ou "DUPLICADO".

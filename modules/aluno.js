@@ -99,7 +99,7 @@ export async function inserirCPF(page, cpf) {
       // 🔄 Pressiona "Tab" para forçar a saída do campo e ativar preenchimento automático
       await page.keyboard.press("Tab");
       logger.info(
-        `⏳  Buscando cadastro... [Tentativa ${tentativas}/${CONFIG.MAX_TENTATIVAS_CPF}]`
+        `⏳ Buscando cadastro... [Tentativa ${tentativas}/${CONFIG.MAX_TENTATIVAS_CPF}]`
       );
 
       // 🕒 Aguarda a resposta do sistema
@@ -130,6 +130,7 @@ export async function inserirCPF(page, cpf) {
 }
 
 export async function inserirCNAE(page) {
+  logger.info("⏳ Inserindo CNAE...");
   let cnaePreenchido = "";
   do {
     if (CONFIG.VERBOSE) {
@@ -159,10 +160,13 @@ export async function inserirCNAE(page) {
         ?.textContent.trim();
     });
   } while (!cnaePreenchido || !cnaePreenchido.includes("8532500"));
-  logger.info("✅ CNAE confirmado e registrado no sistema.");
+  if (CONFIG.VERBOSE) {
+    logger.info("✅ CNAE inserido com sucesso!.");
+  }
 }
 
 export async function inserirMensagem(page, aluno) {
+  logger.info(`💬 Inserindo mensagem...`);
   let dataEmissaoFinal = CONFIG.DATA_EMISSAO_MANUAL;
 
   if (!dataEmissaoFinal) {
@@ -205,7 +209,9 @@ export async function inserirMensagem(page, aluno) {
   await page.keyboard.press("Delete");
   await page.type("#formEmissaoNFConvencional\\:descricaoItem", mensagem);
 
-  logger.info(`💬 Mensagem inserida: "${mensagem}"`);
+  if (CONFIG.VERBOSE) {
+    logger.info(`✅ Mensagem inserida: "${mensagem}"`);
+  }
 }
 
 export async function inserirValor(page, aluno) {
@@ -400,7 +406,7 @@ export async function clicarSalvarNota(page) {
     if (botaoConfirmar) {
       if (CONFIG.SKIP_CONFIRMATION) {
         logger.warn(
-          "⚠️ SKIP_CONFIRMATION ativado: o script NÃO confirmará a nota."
+          "⚠️  SKIP_CONFIRMATION ativado: o script NÃO confirmará a nota."
         );
         return false; // Modal visível, mas não confirmamos
       }
@@ -416,7 +422,9 @@ export async function clicarSalvarNota(page) {
         }
       });
 
-      logger.info("✅ Confirmação realizada, nota salva com sucesso!");
+      if (CONFIG.VERBOSE) {
+        logger.info("✅ Confirmação realizada, nota salva com sucesso!");
+      }
       return true;
     } else {
       logger.error("❌ Botão de confirmação não encontrado!");

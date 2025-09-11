@@ -3,11 +3,13 @@ config.secrets.js
 cookies.json
 
 # planilhas e dados sensíveis
-docs/
-Docs/
+docs/*.xlsx
+Docs/*.xlsx
 
 # logs
-logs/
+logs/*.log
+logs/*.txt
 
 # outros
 node_modules/
+BUGS.md

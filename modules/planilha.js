@@ -143,20 +143,19 @@ export function atualizarAlunoNaPlanilha(alunos, index) {
     workbookGlobal.Sheets[workbookGlobal.SheetNames[0]] = newSheet;
     xlsx.writeFile(workbookGlobal, caminhoGlobal);
 
-    // 🌟 Destaque visual para sucesso
-    logger.info("--------------------------------------------------");
     logger.info(
-      `💾✅ Aluno(a) "${aluno.ALUNO || "[sem nome]"}" marcado como PROCESSADO!`
+      `💾 Aluno(a) "${
+        aluno.ALUNO || "[sem nome]"
+      }" marcado como PROCESSADO na planilha!`
     );
-    logger.info("--------------------------------------------------");
   } catch (error) {
     // ❌ Destaque visual para erro
-    logger.info("--------------------------------------------------");
+
     logger.error(
       `💾❌ ERRO ao salvar planilha para aluno "${aluno.ALUNO || "[sem nome]"}"`
     );
     logger.error(`🔎 Detalhes: ${error.message}`);
-    logger.info("--------------------------------------------------");
+
     encerrarAutomacao("Falha ao salvar na planilha.");
   }
 }

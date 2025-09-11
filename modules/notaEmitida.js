@@ -34,6 +34,7 @@ export async function registrarInformacoesNota(page) {
       dadosNota.numero !== "Não encontrado" &&
       dadosNota.codigoVerificacao !== "Não encontrado"
     ) {
+      logger.info("✅ Emitida com sucesso!");
       logger.info("🧾 Dados da NFS-e emitida:");
       logger.info(`   • Número: ${dadosNota.numero}`);
       logger.info(`   • Código de Verificação: ${dadosNota.codigoVerificacao}`);
@@ -62,7 +63,7 @@ export async function registrarInformacoesNota(page) {
         timeout: 5000,
       });
 
-      logger.info("✅ Tela de emissão recarregada com sucesso.");
+      logger.info("✅ Tela de emissão recarregada com sucesso!");
     } catch (err) {
       const exists = await page.$("#formEmissaoNFConvencional\\:itCpf");
       if (exists) {
@@ -70,9 +71,11 @@ export async function registrarInformacoesNota(page) {
           "✅ Tela de emissão recarregada com sucesso (detected after timeout)."
         );
       } else {
-        logger.warn(
-          "⚠️ Não foi possível confirmar visualmente o CPF, mas continuando..."
-        );
+        if (CONFIG.VERBOSE) {
+          logger.warn(
+            "⚠️ Não foi possível confirmar visualmente o CPF, mas continuando..."
+          );
+        }
         // Apenas AVISO, mas continua! Não throw, não aborta
       }
     }

@@ -109,16 +109,20 @@ export const CONFIG = {
 ### 3) `.gitignore` sugerido
 
 ```gitignore
-# segredos e sessão
+# segredos e sessões
 config.secrets.js
 cookies.json
 
-# planilhas / dados locais
-docs/
-Docs/
+# planilhas e dados sensíveis
+docs/*.xlsx
+Docs/*.xlsx
 
 # logs
-logs/
+logs/*.log
+logs/*.txt
+
+# outros
+node_modules/
 ```
 
 ---
@@ -155,7 +159,7 @@ node index.js
 [08-09-2025 09:08:20] [INFO] 🌐 Abrindo navegador...
 [08-09-2025 09:08:36] [INFO] ⏭️ Pulando aluno no índice 0: já processado ou inválido.
 [08-09-2025 09:08:36] [INFO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[08-09-2025 09:08:36] [INFO] 👤 Aluno(a) selecionado(a): AGNES KAROLYNE DA SILVA SOUZA
+[08-09-2025 09:08:36] [INFO] 👤 Aluno(a) selecionado(a): "FULANO DA SILVA"
 [08-09-2025 09:08:42] [INFO] ⏳  Buscando cadastro... [Tentativa 1/3]
 [08-09-2025 09:18:39] [INFO] ✅ Confirmação realizada, nota salva com sucesso!
 [08-09-2025 09:18:59] [INFO] 💾✅ Aluno(a) "FULANO DA SILVA" marcado como PROCESSADO!
