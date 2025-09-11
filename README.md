@@ -162,7 +162,7 @@ node index.js
 [08-09-2025 09:08:36] [INFO] 👤 Aluno(a) selecionado(a): "FULANO DA SILVA"
 [08-09-2025 09:08:42] [INFO] ⏳  Buscando cadastro... [Tentativa 1/3]
 [08-09-2025 09:18:39] [INFO] ✅ Confirmação realizada, nota salva com sucesso!
-[08-09-2025 09:18:59] [INFO] 💾✅ Aluno(a) "FULANO DA SILVA" marcado como PROCESSADO!
+[08-09-2025 09:18:59] [INFO] 💾 Aluno(a) "FULANO DA SILVA" marcado como PROCESSADO!
 [08-09-2025 09:18:59] [INFO] ✅ Processamento do aluno concluído!
 ```
 
