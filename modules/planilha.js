@@ -1,8 +1,6 @@
 // planilha.js (Carregamento e atualização da planilha)
 import xlsx from "xlsx";
 import { logger } from "../modules/logger.js";
-import readline from "readline";
-import path from "path";
 import { encerrarAutomacao } from "./controleExecucao.js";
 import { CONFIG } from "../config.js";
 
@@ -158,37 +156,4 @@ export function atualizarAlunoNaPlanilha(alunos, index) {
 
     encerrarAutomacao("Falha ao salvar na planilha.");
   }
-}
-
-// 🔧 Modo de teste interativo
-if (process.argv[1].endsWith("planilha.js")) {
-  const caminho = path.resolve("./Docs/TestePlanilhaJS.xlsx");
-  const alunos = carregarPlanilha(caminho);
-
-  console.log("\n✅ Alunos carregados:");
-  alunos.forEach((aluno, i) => {
-    console.log(
-      `${i.toString().padStart(3, "0")} - ${aluno.ALUNO} (${aluno.CPF}) - ${
-        aluno.PROCESSADO
-      }`
-    );
-  });
-
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  rl.question(
-    "\nDigite o índice do aluno que deseja marcar como PROCESSADO: ",
-    (indice) => {
-      const idx = parseInt(indice);
-      if (!isNaN(idx)) {
-        atualizarAlunoNaPlanilha(alunos, idx);
-      } else {
-        console.error("❌ Índice inválido.");
-      }
-      rl.close();
-    }
-  );
 }
