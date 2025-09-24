@@ -18,6 +18,19 @@ export const CONFIG = {
   USERNAME: SECRETS.USERNAME,
   PASSWORD: SECRETS.PASSWORD,
 
+  // Colunas essenciais na planilha
+  COLUNAS_ESSENCIAIS: [
+    "ALUNO",
+    "CPF",
+    "CURSO",
+    "CODSERVICO",
+    "B.C ISS",
+    "PROCESSADO",
+  ],
+
+  // 🚫 Status que devem ser ignorados na execução
+  IGNORAR_STATUS: ["SIM", "ZERADO", "INVALIDO"],
+
   // 🗓️ Data de emissão da nota. Se deixar em branco, será usada a data atual do sistema.
   // Formato: "DD/MM/AAAA" (exemplo: "01/03/2025")
   DATA_EMISSAO_MANUAL: "",

@@ -3,13 +3,14 @@ config.secrets.js
 cookies.json
 
 # planilhas e dados sensíveis
-docs/*.xlsx
-Docs/*.xlsx
+docs/*
+!docs/.gitkeep
 
 # logs
-logs/*.log
-logs/*.txt
+logs/*
+!logs/.gitkeep
 
 # outros
 node_modules/
 BUGS.md
+newIndex.js

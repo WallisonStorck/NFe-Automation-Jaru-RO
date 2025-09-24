@@ -241,7 +241,7 @@ process.on("uncaughtException", (error) => {
 
 // 🛑 Capturar interrupção manual (CTRL+C)
 process.on("SIGINT", async () => {
-  logger.warn("⚠️  Execução interrompida manualmente (CTRL+C)");
+  logger.warn("⚠️ Execução interrompida manualmente (CTRL+C)");
 
   try {
     if (global.ultimoProcessado) {
