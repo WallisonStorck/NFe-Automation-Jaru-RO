@@ -61,7 +61,7 @@ export async function inserirCPF(page, cpf) {
     // 🔄 Espera o campo CPF aparecer antes de interagir
     await page.waitForSelector("#formEmissaoNFConvencional\\:itCpf", {
       visible: true,
-      timeout: 5000,
+      timeout: 10000,
     });
 
     let tentativas = 0; // Número de tentativas realizadas
@@ -85,7 +85,7 @@ export async function inserirCPF(page, cpf) {
             );
             return input && input.value.trim() === "";
           },
-          { timeout: 2000 }
+          { timeout: 4000 }
         )
         .catch(() => {}); // se não limpar em 2s, segue mesmo assim
 
@@ -103,7 +103,7 @@ export async function inserirCPF(page, cpf) {
       );
 
       // 🕒 Aguarda a resposta do sistema
-      await new Promise((resolve) => setTimeout(resolve, 2500));
+      await new Promise((resolve) => setTimeout(resolve, 6000));
 
       // 🔍 Verifica se o nome foi preenchido corretamente
       nameFilledIn = await page.evaluate(() => {

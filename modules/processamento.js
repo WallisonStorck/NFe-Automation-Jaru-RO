@@ -65,7 +65,7 @@ export async function processarAluno(page, aluno, index, alunos) {
       global.ultimoProcessado = { alunos, index };
     } else {
       logger.warn(
-        `⚠️  Nota aparentemente não foi emitida corretamente para ${aluno.ALUNO}, não marcando como processado.`
+        `⚠️ Falha na emissão para ${aluno.ALUNO}. Registro pendente!`
       );
     }
 

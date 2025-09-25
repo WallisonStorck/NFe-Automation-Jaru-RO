@@ -20,9 +20,16 @@ export const CONFIG = {
 
   // Colunas essenciais na planilha
   COLUNAS_ESSENCIAIS: [
+    // "IDLAN",
     "ALUNO",
+    // "IDMOV",
     "CPF",
+    // "DATAVENCIMENTO",
+    // "COMPETENCIA_EDU",
+    // "MESDECOMPETENCIA",
+    // "DATABAIXA",
     "CURSO",
+    // "CODPERLET",
     "CODSERVICO",
     "B.C ISS",
     "PROCESSADO",

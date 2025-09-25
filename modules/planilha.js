@@ -299,9 +299,7 @@ export function atualizarAlunoNaPlanilha(alunos, index) {
     xlsx.writeFile(workbookGlobal, caminhoGlobal);
 
     logger.info(
-      `💾 Aluno(a) "${
-        aluno.ALUNO || "[sem nome]"
-      }" marcado como PROCESSADO na planilha!`
+      `💾 "${aluno.ALUNO || "[sem nome]"}" marcado como PROCESSADO !`
     );
   } catch (error) {
     logger.error(

@@ -15,9 +15,8 @@ import { logger } from "./modules/logger.js";
 import { encerrarAutomacao } from "./modules/controleExecucao.js";
 
 let browser; // Variável global para armazenar o navegador
-let ultimoProcessado = null; // Guarda o ultimo aluno processado com sucesso
 
-// === Helpers de tempo/estatística (mantidos caso você queira usar) ===
+// === Helpers de tempo/estatística ===
 function fmtMs(ms) {
   const s = Math.floor(ms / 1000);
   const h = Math.floor(s / 3600);
@@ -33,8 +32,12 @@ function avg(arr) {
   return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
 
-// 👉 helper para compactar logs de pulados
-function flushSkipped(logger, range, reason = "já processados ou inválidos") {
+// 👉 helper para compactar logs de “pulados”
+function flushSkipped(
+  logger,
+  range,
+  reason = "já processado(s) ou inválido(s)"
+) {
   if (!range) return;
   const { start, end, count } = range;
   if (count === 1) {
@@ -54,9 +57,8 @@ function flushSkipped(logger, range, reason = "já processados ou inválidos") {
     const alunos = carregarPlanilha(CONFIG.FATURAMENTO_FIMCA);
 
     // Abrir navegador
-    const navegador = await abrirNavegador();
-    browser = navegador.browser;
-    const { page } = navegador;
+    const { browser: br, page } = await abrirNavegador();
+    browser = br;
 
     // Restaurar sessão ou fazer login
     const statusSessao = await restaurarSessao(page);
@@ -70,11 +72,29 @@ function flushSkipped(logger, range, reason = "já processados ou inválidos") {
       logger.info("✅ Página correta carregada para emissão de notas.");
     }
 
+    // === Estatísticas de execução ===
+    const IGNORAR = CONFIG.IGNORAR_STATUS ?? ["SIM", "DUPLICADO"];
+    const pendentesTotal = alunos.filter((a) => {
+      if (!a || typeof a !== "object") return false;
+      const st = a.PROCESSADO?.toString().trim().toUpperCase();
+      return !IGNORAR.includes(st);
+    }).length;
+
+    const stats = {
+      startedAt: Date.now(),
+      attempted: 0,
+      success: 0,
+      failure: 0,
+      durations: [], // ms por aluno tentado (sucesso ou falha)
+    };
+
+    logger.info(`📊 Pendentes para processar: ${pendentesTotal} registros.`);
+
     if (CONFIG.TEST_MODE) {
       const index = alunos.findIndex((a) => {
         if (!a || typeof a !== "object") return false;
         const status = a.PROCESSADO?.toString().trim().toUpperCase();
-        return !CONFIG.IGNORAR_STATUS.includes(status);
+        return !IGNORAR.includes(status);
       });
 
       if (index === -1) {
@@ -85,16 +105,34 @@ function flushSkipped(logger, range, reason = "já processados ou inválidos") {
           `🧪 Modo de Teste Ativado! Processando apenas: ${aluno.ALUNO}`
         );
 
-        await processarAluno(
-          page,
-          aluno,
-          index,
-          alunos,
-          CONFIG.FATURAMENTO_FIMCA
+        const t0 = Date.now();
+        let ok = false;
+        try {
+          ok = await processarAluno(
+            page,
+            aluno,
+            index,
+            alunos,
+            CONFIG.FATURAMENTO_FIMCA
+          );
+        } catch {
+          ok = false;
+        }
+        const elapsed = Date.now() - t0;
+
+        stats.attempted += 1;
+        if (ok) stats.success += 1;
+        else stats.failure += 1;
+        stats.durations.push(elapsed);
+
+        logger.info(
+          `⏱️  Tempo deste aluno (TEST_MODE): ${fmtMs(
+            elapsed
+          )} | média: ${fmtMs(avg(stats.durations))} | restantes: 0 | ETA: 0ms`
         );
       }
     } else {
-      // ===== Loop padrão para todos os alunos (com compactação de "pulados") =====
+      // ===== Loop padrão para todos os alunos (com compactação de “pulados”) =====
       if (typeof global._skipRange === "undefined") {
         global._skipRange = null; // { start, end, count }
       }
@@ -103,7 +141,7 @@ function flushSkipped(logger, range, reason = "já processados ou inválidos") {
         const aluno = alunos[index];
 
         const status = aluno?.PROCESSADO?.toString().trim().toUpperCase();
-        const ignorar = CONFIG.IGNORAR_STATUS?.includes(status);
+        const ignorar = IGNORAR.includes(status);
         const invalido = !aluno || typeof aluno !== "object";
 
         // ---- compactação de logs de pulados ----
@@ -127,12 +165,37 @@ function flushSkipped(logger, range, reason = "já processados ou inválidos") {
           }
         }
 
-        await processarAluno(
-          page,
-          aluno,
-          index,
-          alunos,
-          CONFIG.FATURAMENTO_FIMCA
+        // ---- temporizador por aluno válido tentado ----
+        const t0 = Date.now();
+        let ok = false;
+        try {
+          ok = await processarAluno(
+            page,
+            aluno,
+            index,
+            alunos,
+            CONFIG.FATURAMENTO_FIMCA
+          );
+        } catch {
+          ok = false;
+        }
+        const elapsed = Date.now() - t0;
+
+        stats.attempted += 1;
+        if (ok) stats.success += 1;
+        else stats.failure += 1;
+        stats.durations.push(elapsed);
+
+        // média e ETA (com base nos pendentes restantes)
+        const media = avg(stats.durations);
+        const restantes = Math.max(pendentesTotal - stats.attempted, 0);
+        const etaMs = media * restantes;
+
+        logger.info(
+          `⏱️  Tempo deste aluno: ${fmtMs(elapsed)} | ` +
+            `média: ${fmtMs(media)} | ` +
+            `restantes: ${restantes} | ` +
+            `ETA: ${fmtMs(etaMs)}`
         );
       }
 
@@ -143,13 +206,31 @@ function flushSkipped(logger, range, reason = "já processados ou inválidos") {
       }
     }
 
+    // === Resumo final ===
+    const totalMs = Date.now() - stats.startedAt;
+    const mediaFinal = avg(stats.durations);
+    logger.info(
+      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    );
+    logger.info(
+      `📈 Resumo: tentados=${stats.attempted}, ✅=${stats.success}, ❌=${stats.failure}`
+    );
+    logger.info(
+      `⏱️  Tempo total: ${fmtMs(totalMs)} | média por aluno: ${fmtMs(
+        mediaFinal
+      )}`
+    );
+    logger.info(
+      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    );
+
     logger.info("🚀 Automação finalizada!");
   } catch (error) {
     logger.error(`❌ Erro inesperado: ${error.stack}`);
   } finally {
     if (browser) {
       logger.info("🛑 Fechando navegador...");
-      await browser.close(); //Fecha o navegador ao finalizar todos os alunos
+      await browser.close(); // Fecha o navegador ao finalizar todos os alunos
     }
     logger.info("✅ Execução encerrada.");
   }
@@ -174,6 +255,9 @@ process.on("SIGINT", async () => {
 
     if (browser) {
       logger.info("🛑 Fechando navegador...");
+      logger.info(
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      );
       await browser.close();
     }
   } catch (err) {

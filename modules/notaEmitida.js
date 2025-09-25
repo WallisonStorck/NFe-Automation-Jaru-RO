@@ -46,13 +46,23 @@ export async function registrarInformacoesNota(page) {
       logger.warn("⚠️ Alguns dados da nota não foram encontrados.");
     }
   } catch (error) {
-    logger.warn("⚠️ Não foi possível capturar os dados da NFS-e emitida.");
+    // Verifica se existe alguma mensagem de erro no DOM
+    const erroSistema = await page.$(".ui-messages-error, .alert-error");
+    if (erroSistema) {
+      logger.error(
+        "❌ A emissão da nota falhou (erro reportado pelo sistema)."
+      );
+    } else {
+      logger.warn(
+        "⚠️ Nenhum dado da NFS-e encontrado, pode ser atraso ou falha na emissão!"
+      );
+    }
   }
 
   // 🔁 Redirecionar de volta à tela de emissão (caso permitido)
   if (!CONFIG.SKIP_CONFIRMATION && !CONFIG.TEST_MODE) {
     try {
-      logger.info("↩️ Retornando para a tela de emissão de notas...");
+      logger.info("↩️  Retornando para a tela de emissão de notas...");
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
