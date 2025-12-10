@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>NFSe Automação</title>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>NFSe - Emissão Automatizada</h1>
+      <p>Sistema corporativo de emissão fiscal</p>
+    </header>
+
+    <!-- ===================== CONFIGURAÇÕES ===================== -->
+    <section class="card">
+      <h2>Configurações</h2>
+
+      <!-- LOGIN -->
+      <div class="login">
+        <div class="field login-box">
+          <label>Usuário (login)</label>
+          <input id="cfgUser" type="text" placeholder="CPF ou CNPJ">
+        </div>
+
+        <div class="field login-box">
+          <label>Senha</label>
+          <input id="cfgPass" type="password" placeholder="Senha do portal">
+        </div>
+      </div>
+
+      <!-- IGNORAR STATUS -->
+      <div class="configs">
+
+        <div class="field config-box">
+          <label>Ignorar Status (separar por vírgula)</label>
+          <input id="cfgIgnorar" type="text" placeholder="SIM, ZERADO, INVALIDO (Padrões)">
+        </div>
+
+        <!-- DATA EMISSÃO -->
+        <div class="field config-box">
+          <label>Data de Emissão (retroativo)</label>
+          <input id="cfgData" type="text" placeholder="DD/MM/AAAA (ou vazio para data atual)">
+        </div>
+
+        <!-- TENTATIVAS CPF -->
+        <div class="field config-box">
+          <label>Tentativas Máximas por CPF</label>
+          <input id="cfgTentativas" type="number" min="1" max="10" placeholder="3 (Padrão)">
+        </div>
+      </div>
+
+      <button id="saveConfig">Salvar Configurações</button>
+
+    </section>
+
+    <!-- ===================== EXECUÇÃO ===================== -->
+    <section class="card">
+      <h2>Execução</h2>
+
+      <label for="planilha">Selecione a planilha de faturamento:</label>
+      <input id="planilha" type="file" accept=".xlsx">
+
+      <button id="startBtn">Iniciar Automação</button>
+
+      <div id="status-box">
+        <strong>Status:</strong>
+        <span id="status">Aguardando início...</span>
+      </div>
+
+    </section>
+
+    <!-- ===================== LOG ===================== -->
+    <section class="log-area">
+      <h2>Logs da Execução</h2>
+      <pre id="log">======== AGUARDANDO INÍCIO ========</pre>
+    </section>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
