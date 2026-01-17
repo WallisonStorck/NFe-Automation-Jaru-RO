@@ -29,12 +29,19 @@ const getFormattedTimestamp = () => {
   })
     .format(new Date())
     .replace(",", "")
-    .replace(/\//g, "-"); // Ajusta o formato para YYYY-MM-DD HH:mm:ss
+    .replace(/\//g, "-");
 };
 
-// 📌 Escreve a mensagem no arquivo de log e exibe no terminal
+// 📌 Envia log para a UI (se existir stream ativo)
+const emitToUI = (formattedMessage) => {
+  if (typeof global.sendLogToUI === "function") {
+    global.sendLogToUI(formattedMessage);
+  }
+};
+
+// 📌 Escreve a mensagem no arquivo de log, console e UI
 const logMessage = (level, message) => {
-  const timestamp = getFormattedTimestamp(); // Agora pega a hora correta de Porto Velho
+  const timestamp = getFormattedTimestamp();
   const formattedMessage = `[${timestamp}] [${level}] ${message}`;
 
   // Salvar no arquivo
@@ -43,6 +50,9 @@ const logMessage = (level, message) => {
 
   // Exibir no console
   console.log(formattedMessage);
+
+  // Enviar para a interface
+  emitToUI(formattedMessage);
 };
 
 // 📌 Métodos públicos para diferentes tipos de log

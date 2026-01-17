@@ -42,7 +42,7 @@ Automação em **Node.js + Puppeteer** para emissão de **NFS‑e** no portal da
 📦 NF-E-AUTOMATION
 ├─ 📁 docs/
 │  └─ FATURAMENTO.xlsx          # Planilha de entrada
-├─ 📁 logs/                      # Logs rotacionados por data (gerado em runtime)
+├─ 📁 logs/                     # Logs rotacionados por data (gerado em runtime)
 ├─ 📁 modules/
 │  ├─ aluno.js                  # Helpers: CPF, CNAE, mensagem, valor, salvar, etc.
 │  ├─ controleExecucao.js       # Encerramento seguro (graceful shutdown)
@@ -53,7 +53,7 @@ Automação em **Node.js + Puppeteer** para emissão de **NFS‑e** no portal da
 │  ├─ planilha.js               # Leitura/atualização da planilha
 │  └─ processamento.js          # Fluxo principal por aluno
 ├─ config.js                    # Configurações gerais (sem segredos)
-├─ config.secrets.js            # 🔐 Credenciais (NÃO versionado)
+├─ config.secrets.js            # Credenciais (NÃO versionado)
 ├─ cookies.json                 # Cookies de sessão (gerado)
 ├─ index.js                     # Script principal (loop de emissão)
 ├─ package.json

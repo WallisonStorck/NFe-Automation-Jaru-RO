@@ -51,6 +51,16 @@ h2 {
   flex: 1;
 }
 
+.note p {
+  margin: 10px 0 0 0;
+  font-size: 10pt;
+}
+
+.note span {
+  font-weight: bold;
+  font-style: italic;
+}
+
 label {
   font-weight: 500;
   margin-bottom: 6px;
@@ -84,6 +94,15 @@ button {
 
 button:hover {
   background: #006cbe;
+}
+
+#stopBtn {
+  background: red;
+  margin-left: 10px;
+}
+
+#stopBtn:hover {
+  background: #ff4500;
 }
 
 #status-box {

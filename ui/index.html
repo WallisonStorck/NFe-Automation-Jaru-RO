@@ -55,6 +55,12 @@
 
       <button id="saveConfig">Salvar Configurações</button>
 
+      <div class="note">
+        <p><strong>Obs.:</strong> Os campos <span>"Ignorar Status", "Data de Emissão"</span> e <span>"Tentativas Máximas
+            por CPF"</span> quando
+          vazios, terão como valor padrão o que mostra como "dica"...</p>
+      </div>
+
     </section>
 
     <!-- ===================== EXECUÇÃO ===================== -->
@@ -65,6 +71,7 @@
       <input id="planilha" type="file" accept=".xlsx">
 
       <button id="startBtn">Iniciar Automação</button>
+      <button id="stopBtn">Parar Automação</button>
 
       <div id="status-box">
         <strong>Status:</strong>
@@ -76,7 +83,7 @@
     <!-- ===================== LOG ===================== -->
     <section class="log-area">
       <h2>Logs da Execução</h2>
-      <pre id="log">======== AGUARDANDO INÍCIO ========</pre>
+      <pre id="log"></pre>
     </section>
 
   </div>
