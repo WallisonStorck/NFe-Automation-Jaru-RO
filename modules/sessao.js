@@ -54,34 +54,35 @@ async function isLoginScreen(page) {
  */
 export async function ensurePaginaEmissao(
   page,
-  motivo = "navegar para emissão"
+  motivo = "navegar para emissão",
+  cfg = CONFIG,
 ) {
   try {
     if (await hasEmissionSentinel(page, 1000)) {
-      if (CONFIG.VERBOSE) {
+      if (cfg.VERBOSE) {
         logger.info("✅ Tela de emissão detectada.");
       }
       return;
     }
 
-    if (CONFIG.VERBOSE) {
+    if (cfg.VERBOSE) {
       logger.warn(
-        `🧭 Não está na emissão (${motivo}). Navegando para a URL de emissão...`
+        `🧭 Não está na emissão (${motivo}). Navegando para a URL de emissão...`,
       );
     }
-    await page.goto(CONFIG.ISS_JARU, { waitUntil: "domcontentloaded" });
+    await page.goto(cfg.ISS_JARU, { waitUntil: "domcontentloaded" });
 
     // alguns portais demoram para hidratar os componentes
     if (await hasEmissionSentinel(page, 15000)) {
-      if (CONFIG.VERBOSE) {
+      if (cfg.VERBOSE) {
         logger.info("✅ Página de emissão carregada e validada.");
       }
       return;
     }
 
-    if (CONFIG.VERBOSE) {
+    if (cfg.VERBOSE) {
       logger.warn(
-        "⏳ Emissão não detectada após navegação. Tentando recarregar a página..."
+        "⏳ Emissão não detectada após navegação. Tentando recarregar a página...",
       );
     }
     await page.reload({ waitUntil: "domcontentloaded" });
@@ -103,10 +104,10 @@ export async function ensurePaginaEmissao(
  * já está ativa mesmo sem cookies (navegador mantido aberto).
  * Retorna: "restaurada" | "expirada" | "ausente"
  */
-export async function restaurarSessao(page) {
+export async function restaurarSessao(page, cfg = CONFIG) {
   // 0) Primeiro, vê se já estamos autenticados (sem depender de cookies)
   try {
-    await page.goto(CONFIG.ISS_JARU, { waitUntil: "domcontentloaded" });
+    await page.goto(cfg.ISS_JARU, { waitUntil: "domcontentloaded" });
   } catch {
     /* ignore */
   }
@@ -117,14 +118,14 @@ export async function restaurarSessao(page) {
   }
 
   // 1) Sem cookies?
-  if (!fs.existsSync(CONFIG.COOKIE_FILE)) {
-    if (CONFIG.VERBOSE) {
+  if (!fs.existsSync(cfg.COOKIE_FILE)) {
+    if (cfg.VERBOSE) {
       logger.info("ℹ️ Cookie file ausente — sem sessão para restaurar.");
     }
     // Mesmo sem cookies, pode estar logado porém fora da emissão
     // Tenta ir direto pra emissão:
     try {
-      await ensurePaginaEmissao(page, "pós-checagem de cookies ausentes");
+      await ensurePaginaEmissao(page, "pós-checagem de cookies ausentes", cfg);
       return "restaurada";
     } catch {
       return "ausente";
@@ -133,19 +134,19 @@ export async function restaurarSessao(page) {
 
   // 2) Com cookies
   try {
-    if (CONFIG.VERBOSE) {
+    if (cfg.VERBOSE) {
       logger.info("🍪 Tentando restaurar sessão a partir dos cookies...");
     }
     // Ir ao domínio alvo ajuda o setCookie
-    await page.goto(CONFIG.ISS_JARU, { waitUntil: "domcontentloaded" });
+    await page.goto(cfg.ISS_JARU, { waitUntil: "domcontentloaded" });
 
-    const cookies = JSON.parse(await fs.readFile(CONFIG.COOKIE_FILE, "utf8"));
+    const cookies = JSON.parse(await fs.readFile(cfg.COOKIE_FILE, "utf8"));
     if (!Array.isArray(cookies) || cookies.length === 0) {
       logger.warn("⚠️ Cookie file vazio — removendo arquivo.");
-      await fs.remove(CONFIG.COOKIE_FILE);
+      await fs.remove(cfg.COOKIE_FILE);
       // tenta emissão mesmo assim (pode já estar logado)
       try {
-        await ensurePaginaEmissao(page, "pós-cookies vazios");
+        await ensurePaginaEmissao(page, "pós-cookies vazios", cfg);
         return "restaurada";
       } catch {
         return "ausente";
@@ -157,12 +158,12 @@ export async function restaurarSessao(page) {
 
     // Se estiver em login, expirou
     if (await isLoginScreen(page)) {
-      if (CONFIG.VERBOSE) {
+      if (cfg.VERBOSE) {
         logger.warn(
-          "⚠️ Cookies carregados, mas sessão não validou (login à vista)."
+          "⚠️ Cookies carregados, mas sessão não validou (login à vista).",
         );
       }
-      await fs.remove(CONFIG.COOKIE_FILE).catch(() => {});
+      await fs.remove(cfg.COOKIE_FILE).catch(() => {});
       return "expirada";
     }
 
@@ -174,18 +175,18 @@ export async function restaurarSessao(page) {
 
     // Pode estar logado mas em outra página → garante emissão
     try {
-      await ensurePaginaEmissao(page, "pós-restauração");
+      await ensurePaginaEmissao(page, "pós-restauração", cfg);
       logger.info("🔐 Sessão restaurada com sucesso (após navegação).");
       return "restaurada";
     } catch {
       // não conseguimos detectar emissão — trate como expirada
-      await fs.remove(CONFIG.COOKIE_FILE).catch(() => {});
+      await fs.remove(cfg.COOKIE_FILE).catch(() => {});
       return "expirada";
     }
   } catch (error) {
     logger.warn(`⚠️ Falha ao restaurar sessão: ${error.message}`);
     try {
-      await fs.remove(CONFIG.COOKIE_FILE);
+      await fs.remove(cfg.COOKIE_FILE);
     } catch {}
     return "expirada";
   }
@@ -198,19 +199,19 @@ export async function restaurarSessao(page) {
  * - Só digita credenciais quando a tela de login está presente.
  * Salva cookies no fim.
  */
-export async function fazerLogin(page) {
-  if (CONFIG.VERBOSE) {
+export async function fazerLogin(page, cfg = CONFIG) {
+  if (cfg.VERBOSE) {
     logger.info("🔑 Realizando login…");
   }
   // Garante que estamos no domínio alvo
-  await page.goto(CONFIG.ISS_JARU, { waitUntil: "domcontentloaded" });
+  await page.goto(cfg.ISS_JARU, { waitUntil: "domcontentloaded" });
 
   // 1) Já autenticado? (sentinela na tela atual)
   if (await hasEmissionSentinel(page, 1500)) {
-    if (CONFIG.VERBOSE) {
+    if (cfg.VERBOSE) {
       logger.info("✅ Sessão já autenticada — pulando login.");
     }
-    await salvarCookies(page);
+    await salvarCookies(page, cfg);
     return;
   }
 
@@ -218,15 +219,15 @@ export async function fazerLogin(page) {
   if (!(await isLoginScreen(page))) {
     // Não é login; pode estar autenticado em outra tela
     logger.warn("ℹ️ Não é a tela de login. Tentando ir direto para a emissão.");
-    await ensurePaginaEmissao(page, "pós-deteção de não-login");
-    await salvarCookies(page);
+    await ensurePaginaEmissao(page, "pós-deteção de não-login", cfg);
+    await salvarCookies(page, cfg);
     return;
   }
 
   // 3) É login de fato — procede
-  if (CONFIG.VERBOSE) {
+  if (cfg.VERBOSE) {
     logger.info(
-      `🧭 Campos de login detectados: user="${USER_SEL}" pass="${PASS_SEL}"`
+      `🧭 Campos de login detectados: user="${USER_SEL}" pass="${PASS_SEL}"`,
     );
   }
 
@@ -234,21 +235,21 @@ export async function fazerLogin(page) {
     const el = document.querySelector(sel);
     if (el) el.value = "";
   }, USER_SEL);
-  await page.type(USER_SEL, (CONFIG.USERNAME || "").trim(), { delay: 15 });
+  await page.type(USER_SEL, (cfg.USERNAME || "").trim(), { delay: 15 });
 
   await page.evaluate((sel) => {
     const el = document.querySelector(sel);
     if (el) el.value = "";
   }, PASS_SEL);
-  await page.type(PASS_SEL, (CONFIG.PASSWORD || "").trim(), { delay: 15 });
+  await page.type(PASS_SEL, (cfg.PASSWORD || "").trim(), { delay: 15 });
 
-  if (CONFIG.VERBOSE) {
+  if (cfg.VERBOSE) {
     logger.info(`👉 Clicando no botão de login: "${BTN_SEL}"`);
   }
   await Promise.all([
     page.waitForNavigation({
       waitUntil: "domcontentloaded",
-      timeout: Number(CONFIG.NAVIGATION_TIMEOUT_MS ?? 45000),
+      timeout: Number(cfg.NAVIGATION_TIMEOUT_MS ?? 45000),
     }),
     page.click(BTN_SEL),
   ]);
@@ -258,29 +259,29 @@ export async function fazerLogin(page) {
     throw new Error("Credenciais inválidas ou bloqueio no login.");
   }
 
-  if (CONFIG.VERBOSE) {
+  if (cfg.VERBOSE) {
     logger.info("✅ Login realizado com sucesso!");
   }
-  await ensurePaginaEmissao(page, "pós-login");
-  await salvarCookies(page);
+  await ensurePaginaEmissao(page, "pós-login", cfg);
+  await salvarCookies(page, cfg);
 }
 
 /** Salva cookies atuais em disco (best-effort). */
-async function salvarCookies(page) {
+async function salvarCookies(page, cfg = CONFIG) {
   try {
     const cookies = await page.cookies();
-    await fs.writeFile(CONFIG.COOKIE_FILE, JSON.stringify(cookies, null, 2));
-    if (CONFIG.VERBOSE) {
+    await fs.writeFile(cfg.COOKIE_FILE, JSON.stringify(cookies, null, 2));
+    if (cfg.VERBOSE) {
       logger.info("💾 Cookies salvos para próximas execuções.");
     }
   } catch (e) {
-    if (CONFIG.VERBOSE) {
+    if (cfg.VERBOSE) {
       logger.warn(`⚠️ Não foi possível salvar cookies: ${e.message}`);
     }
   }
 }
 
 /** Compat: redireciona para emissão (mantém API antiga, caso chamada em algum lugar) */
-export async function redirecionaPagina(page) {
-  await ensurePaginaEmissao(page, "redirecionaPagina()");
+export async function redirecionaPagina(page, cfg = CONFIG) {
+  await ensurePaginaEmissao(page, "redirecionaPagina()", cfg);
 }

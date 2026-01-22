@@ -1,5 +1,3 @@
-// index.js (Motor da automação – controlado pela UI)
-
 import { abrirNavegador } from "./modules/navegador.js";
 import { carregarPlanilha } from "./modules/planilha.js";
 import {
@@ -42,7 +40,7 @@ function flushSkipped(range, reason = "já processado(s) ou inválido(s)") {
     logger.info(`⏭️  Pulando aluno no índice ${start}: ${reason}.`);
   } else {
     logger.info(
-      `⏭️  Pulando alunos do índice ${start} ao ${end} (${count} itens): ${reason}.`
+      `⏭️  Pulando alunos do índice ${start} ao ${end} (${count} itens): ${reason}.`,
     );
   }
 }
@@ -68,18 +66,27 @@ export async function startAutomation(overrideConfig = {}) {
   try {
     logger.info("🤖 Automação iniciada via interface gráfica.");
 
+    // ✅ valida credenciais (agora vêm da interface)
+    if (!runtimeConfig.USERNAME || !runtimeConfig.PASSWORD) {
+      throw new Error(
+        "Credenciais não informadas pela interface (USERNAME/PASSWORD).",
+      );
+    }
+
     // ✅ usa a planilha vinda da UI (ou a padrão)
     const alunos = carregarPlanilha(runtimeConfig.FATURAMENTO_FIMCA);
 
     const { browser: br, page } = await abrirNavegador();
     browser = br;
 
-    const statusSessao = await restaurarSessao(page);
+    // ✅ passa runtimeConfig para as funções de sessão
+    const statusSessao = await restaurarSessao(page, runtimeConfig);
     if (statusSessao !== "restaurada") {
-      await fazerLogin(page);
+      await fazerLogin(page, runtimeConfig);
     }
 
-    await ensurePaginaEmissao(page, "início da execução");
+    // ✅ garante emissão usando runtimeConfig (URL, verbose etc.)
+    await ensurePaginaEmissao(page, "início da execução", runtimeConfig);
 
     const IGNORAR = runtimeConfig.IGNORAR_STATUS ?? ["SIM", "DUPLICADO"];
 
@@ -137,7 +144,7 @@ export async function startAutomation(overrideConfig = {}) {
           aluno,
           index,
           alunos,
-          runtimeConfig.FATURAMENTO_FIMCA
+          runtimeConfig.FATURAMENTO_FIMCA,
         );
       } catch {
         ok = false;
@@ -152,13 +159,15 @@ export async function startAutomation(overrideConfig = {}) {
       const restantes = Math.max(pendentesTotal - stats.attempted, 0);
 
       logger.info(
-        `⏱️ ${fmtMs(elapsed)} | média ${fmtMs(media)} | restantes ${restantes}`
+        `⏱️ ${fmtMs(elapsed)} | média ${fmtMs(media)} | restantes ${restantes}`,
       );
     }
 
     logger.info("🚀 Automação finalizada.");
   } catch (error) {
-    logger.error(`❌ Erro inesperado: ${error.stack}`);
+    logger.error(
+      `❌ Erro inesperado: ${error.stack || error.message || error}`,
+    );
   } finally {
     if (browser) {
       logger.info("🛑 Fechando navegador...");

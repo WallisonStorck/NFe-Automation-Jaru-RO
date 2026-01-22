@@ -1,7 +1,5 @@
 // config.js (Configurações gerais da automação)
 
-import { SECRETS } from "./config.secrets.js";
-
 // Exporta objeto de configuração central usado por toda a aplicação
 export const CONFIG = {
   // 📄 Caminho para a planilha Excel com os dados dos alunos
@@ -15,8 +13,8 @@ export const CONFIG = {
   COOKIE_FILE: "cookies.json",
 
   // 🔐 Informação sensível que vem de config.secrets.js
-  USERNAME: SECRETS.USERNAME,
-  PASSWORD: SECRETS.PASSWORD,
+  // USERNAME: SECRETS.USERNAME,
+  // PASSWORD: SECRETS.PASSWORD,
 
   // Colunas essenciais na planilha
   COLUNAS_ESSENCIAIS: [
@@ -68,7 +66,7 @@ export const CONFIG = {
 
   /*
     🔎 RESUMO DOS MODOS:
-
+    
     SKIP_CONFIRMATION:
       true  => Preenche os campos e clica em "Salvar", mas NÃO confirma a nota
             e NÃO redireciona para nova emissão (permite inspeção manual do modal).
