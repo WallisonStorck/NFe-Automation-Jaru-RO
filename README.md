@@ -21,7 +21,6 @@ Automação em **Node.js + Puppeteer** para emissão de **NFS‑e** no portal da
 - Login automático no portal da Prefeitura (com **reuso de cookies** quando possível)
 - Detecção idempotente de sessão (evita relogar quando já está autenticado)
 - Preenchimento automático de:
-
   - Tipo de pessoa (Física)
   - **CPF** (com múltiplas tentativas e fallback para **pular o aluno**)
   - **CNAE** fixo do serviço
@@ -170,9 +169,7 @@ node index.js
 
 ## 🛟 Dicas & Solução de Problemas
 
-- **Nota**: Notas feitas mas que no log aparece: "⚠️ Falha na emissão para FULANO DA SILVA. Registro pendente!".
-
-- **Dados da nota**: Não está pegando os dados da nota, mas eles aparecem na página...
+- **-----**: -----".
 
 ---
 
