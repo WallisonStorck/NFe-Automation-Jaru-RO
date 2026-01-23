@@ -1,7 +1,5 @@
 // Lida com a interface: configurações, status e logs
 
-import { CONFIG } from "../config";
-
 // Atualiza o texto de status
 function setStatus(msg) {
   const status = document.getElementById("status");
@@ -38,7 +36,7 @@ function saveConfig() {
 
     DATA_EMISSAO_MANUAL: document.getElementById("cfgData").value.trim() || "",
     MAX_TENTATIVAS_CPF: Number(
-      document.getElementById("cfgTentativas").value.trim() || "3"
+      document.getElementById("cfgTentativas").value.trim() || "3",
     ),
   };
 
@@ -51,10 +49,10 @@ function saveConfig() {
   addLog("Senha: " + (cfg.PASSWORD ? "********" : "(vazio)"));
   addLog(
     "Status a ignorar: " +
-      (cfg.IGNORAR_STATUS || "SIM, ZERADO, INVALIDO (padrão)")
+      (cfg.IGNORAR_STATUS || "SIM, ZERADO, INVALIDO (padrão)"),
   );
   addLog(
-    `Data Manual: ${cfg.DATA_EMISSAO_MANUAL ? cfg.DATA_EMISSAO_MANUAL : "Não"}`
+    `Data Manual: ${cfg.DATA_EMISSAO_MANUAL ? cfg.DATA_EMISSAO_MANUAL : "Não"}`,
   );
   addLog("Máximo de tentativas por CPF: " + cfg.MAX_TENTATIVAS_CPF);
 }
@@ -105,7 +103,7 @@ async function sendConfigAndSpreadsheet() {
   formData.append("planilha", fileInput.files[0]);
 
   setStatus("Enviando planilha e configurações...");
-  addLog("📤 Enviando dados para o servidor...");
+  // addLog("📤 Enviando dados para o servidor...");
 
   try {
     // ⚠️ Importante:
@@ -124,9 +122,7 @@ async function sendConfigAndSpreadsheet() {
     }
 
     setStatus("Automação iniciada.");
-    if (CONFIG.VERBOSE) {
-      addLog("🚀 Automação iniciada com sucesso.");
-    }
+    // addLog("🚀 Automação iniciada com sucesso.");
   } catch (err) {
     setStatus("Erro ao iniciar...");
     addLog("❌ Falha ao comunicar com o servidor: " + err.message);

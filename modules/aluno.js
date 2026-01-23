@@ -6,11 +6,11 @@ import { MENSAGENS } from "./mensagens.js";
 export async function inserirDataEmissao(page) {
   if (CONFIG.DATA_EMISSAO_MANUAL) {
     logger.info(
-      `🗓️ Alterando data de emissão para: ${CONFIG.DATA_EMISSAO_MANUAL}`
+      `🗓️ Alterando data de emissão para: ${CONFIG.DATA_EMISSAO_MANUAL}`,
     );
     await page.waitForSelector(
       "#formEmissaoNFConvencional\\:imDataEmissao_input",
-      { visible: true }
+      { visible: true },
     );
     await page.click("#formEmissaoNFConvencional\\:imDataEmissao_input", {
       clickCount: 3,
@@ -19,13 +19,13 @@ export async function inserirDataEmissao(page) {
     await page.keyboard.press("Delete");
     await page.type(
       "#formEmissaoNFConvencional\\:imDataEmissao_input",
-      CONFIG.DATA_EMISSAO_MANUAL
+      CONFIG.DATA_EMISSAO_MANUAL,
     );
     await page.keyboard.press("Tab");
     await new Promise((resolve) => setTimeout(resolve, 1000));
     if (CONFIG.VERBOSE) {
       logger.info(
-        `✅ Data de emissão alterada para: ${CONFIG.DATA_EMISSAO_MANUAL}`
+        `✅ Data de emissão alterada para: ${CONFIG.DATA_EMISSAO_MANUAL}`,
       );
     }
   }
@@ -39,11 +39,11 @@ export async function selecionarTipoPessoa(page) {
   try {
     await page.waitForSelector(
       "#formEmissaoNFConvencional\\:tipoPessoa_input",
-      { visible: true }
+      { visible: true },
     );
     await page.select(
       "#formEmissaoNFConvencional\\:tipoPessoa_input",
-      "FISICA"
+      "FISICA",
     );
     if (CONFIG.VERBOSE) {
       logger.info("✅ Tipo de pessoa definido como Física");
@@ -81,11 +81,11 @@ export async function inserirCPF(page, cpf) {
         .waitForFunction(
           () => {
             const input = document.querySelector(
-              "#formEmissaoNFConvencional\\:itCpf"
+              "#formEmissaoNFConvencional\\:itCpf",
             );
             return input && input.value.trim() === "";
           },
-          { timeout: 4000 }
+          { timeout: 4000 },
         )
         .catch(() => {}); // se não limpar em 2s, segue mesmo assim
 
@@ -99,7 +99,7 @@ export async function inserirCPF(page, cpf) {
       // 🔄 Pressiona "Tab" para forçar a saída do campo e ativar preenchimento automático
       await page.keyboard.press("Tab");
       logger.info(
-        `⏳ Buscando cadastro... [Tentativa ${tentativas}/${CONFIG.MAX_TENTATIVAS_CPF}]`
+        `⏳ Buscando cadastro... [Tentativa ${tentativas}/${CONFIG.MAX_TENTATIVAS_CPF}]`,
       );
 
       // 🕒 Aguarda a resposta do sistema
@@ -121,7 +121,7 @@ export async function inserirCPF(page, cpf) {
 
     // ❌ Se não conseguir após todas tentativas, apenas retorna false
     throw new Error(
-      `Falha ao inserir CPF ${cpf} após ${tentativas} tentativas. Talvez o aluno não esteja cadastrado... Pulando para o próximo...`
+      `Falha ao inserir CPF ${cpf} após ${tentativas} tentativas. Talvez o aluno não esteja cadastrado... Pulando para o próximo...`,
     );
   } catch (error) {
     logger.error(`❌ ${error.message}`);
@@ -145,7 +145,7 @@ export async function inserirCNAE(page) {
       opcoes.forEach((opcao) => {
         if (
           opcao.innerText.includes(
-            "8532500 - Educação superior - graduação e pós-graduação"
+            "8532500 - Educação superior - graduação e pós-graduação",
           )
         ) {
           opcao.click();
@@ -180,9 +180,11 @@ export async function inserirAtividadeMunicipal(page) {
 
   // 2) Espera a opção do código aparecer (porque depende do CNAE)
   //    Isso garante que você já selecionou o CNAE antes.
-  logger.info(
-    "⏳ Aguardando opções da Atividade Municipal carregarem (dependente do CNAE)..."
-  );
+  if (CONFIG.VERBOSE) {
+    logger.info(
+      "⏳ Aguardando opções da Atividade Municipal carregarem (dependente do CNAE)...",
+    );
+  }
   await page.waitForFunction(
     (sel, codigo) => {
       const select = document.querySelector(sel);
@@ -192,7 +194,7 @@ export async function inserirAtividadeMunicipal(page) {
     },
     { timeout: 30000 },
     SELECT_SEL,
-    CODIGO_ALVO
+    CODIGO_ALVO,
   );
 
   // 3) Descobre o value exato da opção 080102 e seleciona
@@ -204,12 +206,12 @@ export async function inserirAtividadeMunicipal(page) {
       return opt ? opt.value : null;
     },
     SELECT_SEL,
-    TEXTO_ALVO
+    TEXTO_ALVO,
   );
 
   if (!valueAlvo) {
     throw new Error(
-      `Não encontrou a opção "${TEXTO_ALVO}" no select de Atividade Municipal.`
+      `Não encontrou a opção "${TEXTO_ALVO}" no select de Atividade Municipal.`,
     );
   }
 
@@ -232,14 +234,14 @@ export async function inserirAtividadeMunicipal(page) {
 
   if (CONFIG.VERBOSE) {
     logger.info(
-      `🔎 Atividade Municipal atual: "${atividadePreenchida || "[vazio]"}"`
+      `🔎 Atividade Municipal atual: "${atividadePreenchida || "[vazio]"}"`,
     );
   }
 
   // 7) Se o label não atualizou ainda, espera mais um pouco (ajax)
   if (!atividadePreenchida.includes(CODIGO_ALVO)) {
     logger.warn(
-      "⏳ Atividade Municipal ainda não refletiu no label. Aguardando processamento..."
+      "⏳ Atividade Municipal ainda não refletiu no label. Aguardando processamento...",
     );
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
@@ -252,11 +254,13 @@ export async function inserirAtividadeMunicipal(page) {
     throw new Error(
       `Falha ao selecionar Atividade Municipal. Label permaneceu: "${
         atividadePreenchida || "[vazio]"
-      }"`
+      }"`,
     );
   }
 
-  logger.info("✅ Atividade Municipal inserida com sucesso!");
+  if (CONFIG.VERBOSE) {
+    logger.info("✅ Atividade Municipal inserida com sucesso!");
+  }
 }
 
 export async function inserirMensagem(page, aluno) {
@@ -266,7 +270,7 @@ export async function inserirMensagem(page, aluno) {
   if (!dataEmissaoFinal) {
     dataEmissaoFinal = await page.evaluate(() => {
       let dataInput = document.querySelector(
-        "#formEmissaoNFConvencional\\:imDataEmissao_input"
+        "#formEmissaoNFConvencional\\:imDataEmissao_input",
       );
       return dataInput ? dataInput.value : "";
     });
@@ -275,7 +279,7 @@ export async function inserirMensagem(page, aluno) {
   // Se não conseguiu capturar a data, loga um erro
   if (!dataEmissaoFinal || !/^\d{2}\/\d{2}\/\d{4}$/.test(dataEmissaoFinal)) {
     logger.error(
-      "❌ Erro ao obter a data de emissão. Verifique o campo de data."
+      "❌ Erro ao obter a data de emissão. Verifique o campo de data.",
     );
     return; // Não prosseguir sem uma data válida
   }
@@ -336,7 +340,7 @@ export async function inserirValor(page, aluno) {
     logger.error(
       `❌ Valor da nota não encontrado para o aluno ${
         aluno.ALUNO
-      }. Nenhuma coluna válida localizada (${colunasPossiveis.join(", ")})`
+      }. Nenhuma coluna válida localizada (${colunasPossiveis.join(", ")})`,
     );
     return false;
   }
@@ -346,14 +350,14 @@ export async function inserirValor(page, aluno) {
 
   if (isNaN(valorNumerico)) {
     logger.error(
-      `❌ Valor inválido detectado para ${aluno.ALUNO}: ${valorNotaBruto}`
+      `❌ Valor inválido detectado para ${aluno.ALUNO}: ${valorNotaBruto}`,
     );
     return false;
   }
 
   if (valorNumerico === 0) {
     logger.warn(
-      `⚠️ Valor da nota para o aluno ${aluno.ALUNO} é R$ 0,00. Pulando emissão.`
+      `⚠️ Valor da nota para o aluno ${aluno.ALUNO} é R$ 0,00. Pulando emissão.`,
     );
     return false;
   }
@@ -380,7 +384,7 @@ export async function inserirValor(page, aluno) {
   // Dispara evento de mudança
   await page.evaluate(() => {
     const input = document.querySelector(
-      "#formEmissaoNFConvencional\\:vlrUnitario_input"
+      "#formEmissaoNFConvencional\\:vlrUnitario_input",
     );
     if (input) {
       input.dispatchEvent(new Event("change", { bubbles: true }));
@@ -392,7 +396,7 @@ export async function inserirValor(page, aluno) {
   // Valida o valor final no campo (tratando ponto de milhar)
   const valorNoCampo = await page.evaluate(() => {
     const input = document.querySelector(
-      "#formEmissaoNFConvencional\\:vlrUnitario_input"
+      "#formEmissaoNFConvencional\\:vlrUnitario_input",
     );
     return input?.value.trim();
   });
@@ -402,7 +406,7 @@ export async function inserirValor(page, aluno) {
 
   if (campoNormalizado !== esperadoNormalizado) {
     logger.error(
-      `❌ Divergência detectada ao digitar valor para ${aluno.ALUNO}: esperado "${valorFormatado}", mas o campo ficou "${valorNoCampo}"`
+      `❌ Divergência detectada ao digitar valor para ${aluno.ALUNO}: esperado "${valorFormatado}", mas o campo ficou "${valorNoCampo}"`,
     );
     return false;
   }
@@ -419,7 +423,7 @@ export async function clicarAdicionarItem(page) {
     // Clica no botão de adicionar item
     await page.evaluate(() => {
       const botaoAdicionar = document.querySelector(
-        "#formEmissaoNFConvencional\\:btnAddItem"
+        "#formEmissaoNFConvencional\\:btnAddItem",
       );
       if (botaoAdicionar) {
         botaoAdicionar.dispatchEvent(new Event("mouseover", { bubbles: true }));
@@ -435,7 +439,7 @@ export async function clicarAdicionarItem(page) {
     // Verifica se o item foi adicionado à tabela
     const itemAdicionado = await page.evaluate(() => {
       const tabela = document.querySelector(
-        "#formEmissaoNFConvencional\\:listaItensNota_data"
+        "#formEmissaoNFConvencional\\:listaItensNota_data",
       );
       if (!tabela) return false;
 
@@ -445,7 +449,7 @@ export async function clicarAdicionarItem(page) {
 
     if (!itemAdicionado) {
       logger.error(
-        "❌ O item não foi adicionado à tabela de serviços. Verifique os campos."
+        "❌ O item não foi adicionado à tabela de serviços. Verifique os campos.",
       );
       return false;
     }
@@ -490,7 +494,7 @@ export async function clicarSalvarNota(page) {
 
     if (!modalVisivel) {
       logger.error(
-        "❌ Modal de confirmação não apareceu. Verifique os campos."
+        "❌ Modal de confirmação não apareceu. Verifique os campos.",
       );
       return false;
     }
@@ -500,7 +504,7 @@ export async function clicarSalvarNota(page) {
     if (botaoConfirmar) {
       if (CONFIG.SKIP_CONFIRMATION) {
         logger.warn(
-          "⚠️  SKIP_CONFIRMATION ativado: o script NÃO confirmará a nota."
+          "⚠️  SKIP_CONFIRMATION ativado: o script NÃO confirmará a nota.",
         );
         return false; // Modal visível, mas não confirmamos
       }

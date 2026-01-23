@@ -1,4 +1,139 @@
-// server.js
+// // server.js
+// import express from "express";
+// import path from "path";
+// import fs from "fs";
+// import multer from "multer";
+// import { fileURLToPath } from "url";
+// import { startAutomation, stopAutomation } from "./index.js";
+
+// const app = express();
+
+// // --- ajustes para ESM ---
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+
+// // --- pasta da interface ---
+// const UI_PATH = path.join(__dirname, "ui");
+
+// // --- middlewares ---
+// app.use(express.json()); // permite receber JSON (para rotas que usam JSON)
+// app.use(express.static(UI_PATH));
+
+// // --- garantir pasta de uploads ---
+// const UPLOADS_PATH = path.join(__dirname, "uploads");
+// if (!fs.existsSync(UPLOADS_PATH)) {
+//   fs.mkdirSync(UPLOADS_PATH, { recursive: true });
+// }
+
+// // --- upload da planilha ---
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => cb(null, UPLOADS_PATH),
+//   filename: (req, file, cb) => {
+//     // garante extensão .xlsx (mesmo que venha sem)
+//     const original = (file.originalname || "FATURAMENTO.xlsx").trim();
+//     const hasXlsx = original.toLowerCase().endsWith(".xlsx");
+//     const name = hasXlsx ? original : `${original}.xlsx`;
+//     cb(null, name);
+//   },
+// });
+
+// const upload = multer({
+//   storage,
+//   limits: {
+//     fileSize: 25 * 1024 * 1024, // 25MB (ajuste se precisar)
+//   },
+// });
+
+// // ===============================
+// // LOG STREAM (SSE) - logs ao vivo
+// // ===============================
+// let logClients = [];
+
+// function sendLogToClients(message) {
+//   for (const res of logClients) {
+//     res.write(`data: ${message}\n\n`);
+//   }
+// }
+
+// // expõe para o logger usar (global)
+// global.sendLogToUI = (message) => {
+//   sendLogToClients(message);
+// };
+
+// // rota de streaming
+// app.get("/logs", (req, res) => {
+//   res.setHeader("Content-Type", "text/event-stream");
+//   res.setHeader("Cache-Control", "no-cache");
+//   res.setHeader("Connection", "keep-alive");
+
+//   // mensagem inicial
+//   // res.write("data: 🔌 Conectado ao stream de logs\n\n");
+
+//   logClients.push(res);
+
+//   req.on("close", () => {
+//     logClients = logClients.filter((c) => c !== res);
+//   });
+// });
+
+// // --- rota principal (UI) ---
+// app.get("/", (req, res) => {
+//   res.sendFile(path.join(UI_PATH, "index.html"));
+// });
+
+// // --- iniciar automação ---
+// app.post("/start", upload.single("planilha"), async (req, res) => {
+//   try {
+//     // validações básicas
+//     if (!req.body?.config) {
+//       return res.status(400).json({
+//         ok: false,
+//         error: 'Campo "config" não foi enviado.',
+//       });
+//     }
+
+//     if (!req.file?.path) {
+//       return res.status(400).json({
+//         ok: false,
+//         error: "Nenhuma planilha foi enviada.",
+//       });
+//     }
+
+//     const cfg = JSON.parse(req.body.config);
+//     const filePath = req.file.path;
+
+//     console.log("📥 Configuração recebida:", cfg);
+//     console.log("📂 Planilha recebida em:", filePath);
+
+//     // dispara a automação (não usar await, para não travar o servidor)
+//     startAutomation({
+//       ...cfg,
+//       FATURAMENTO_FIMCA: filePath,
+//     });
+
+//     return res.json({ ok: true });
+//   } catch (err) {
+//     console.error("❌ Erro ao iniciar:", err);
+//     return res.status(500).json({
+//       ok: false,
+//       error: "Erro interno ao iniciar a automação.",
+//     });
+//   }
+// });
+
+// // --- parar automação ---
+// app.post("/stop", (req, res) => {
+//   console.log("🛑 Parada solicitada pela interface...");
+//   stopAutomation();
+//   res.json({ ok: true });
+// });
+
+// // --- iniciar servidor ---
+// const PORT = 3000;
+// app.listen(PORT, () => {
+//   console.log(`🖥️  Interface disponível em: http://localhost:${PORT}`);
+// });
+
 import express from "express";
 import path from "path";
 import fs from "fs";
@@ -19,15 +154,24 @@ const UI_PATH = path.join(__dirname, "ui");
 app.use(express.json()); // permite receber JSON (para rotas que usam JSON)
 app.use(express.static(UI_PATH));
 
-// --- garantir pasta de uploads ---
-const UPLOADS_PATH = path.join(__dirname, "uploads");
-if (!fs.existsSync(UPLOADS_PATH)) {
-  fs.mkdirSync(UPLOADS_PATH, { recursive: true });
+// --- garantir pasta de processados ---
+const PROCESSED_PATH = path.join(__dirname, "processed");
+if (!fs.existsSync(PROCESSED_PATH)) {
+  fs.mkdirSync(PROCESSED_PATH, { recursive: true });
 }
 
-// --- upload da planilha ---
+// --- upload da planilha (salva direto em processed com .xlsx) ---
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, PROCESSED_PATH),
+  filename: (req, file, cb) => {
+    // arquivo de trabalho (será renomeado no fim)
+    // mantém extensão .xlsx
+    cb(null, "WORKING.xlsx");
+  },
+});
+
 const upload = multer({
-  dest: UPLOADS_PATH, // pasta temporária
+  storage,
   limits: {
     fileSize: 25 * 1024 * 1024, // 25MB (ajuste se precisar)
   },
@@ -70,6 +214,47 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(UI_PATH, "index.html"));
 });
 
+// --- estado do arquivo de trabalho ---
+let workingSpreadsheetPath = null;
+
+// --- função para renomear o arquivo final ---
+function finalizarPlanilha() {
+  if (!workingSpreadsheetPath) return;
+
+  // Ex: Processados_2026-01-22_22-55-10.xlsx
+  const ts = new Date()
+    .toISOString()
+    .replace("T", "_")
+    .replace(/\..+$/, "")
+    .replace(/:/g, "-");
+
+  const finalPath = path.join(PROCESSED_PATH, `Processados_${ts}.xlsx`);
+
+  try {
+    // Se já existir um final com mesmo nome, sobrescreve (raro)
+    if (fs.existsSync(finalPath)) {
+      fs.unlinkSync(finalPath);
+    }
+
+    fs.renameSync(workingSpreadsheetPath, finalPath);
+    console.log("✅ Planilha final salva em:", finalPath);
+
+    if (typeof global.sendLogToUI === "function") {
+      global.sendLogToUI(`✅ Planilha final salva em: ${finalPath}`);
+    }
+
+    // limpa estado
+    workingSpreadsheetPath = null;
+  } catch (err) {
+    console.error("❌ Falha ao finalizar planilha:", err.message);
+  }
+}
+
+// --- quando a automação terminar, o index.js chama isso ---
+global.onAutomationFinished = () => {
+  finalizarPlanilha();
+};
+
 // --- iniciar automação ---
 app.post("/start", upload.single("planilha"), async (req, res) => {
   try {
@@ -89,15 +274,17 @@ app.post("/start", upload.single("planilha"), async (req, res) => {
     }
 
     const cfg = JSON.parse(req.body.config);
-    const filePath = req.file.path;
+
+    // arquivo de trabalho (sempre WORKING.xlsx dentro de processed)
+    workingSpreadsheetPath = req.file.path;
 
     console.log("📥 Configuração recebida:", cfg);
-    console.log("📂 Planilha recebida em:", filePath);
+    console.log("📂 Planilha recebida em:", workingSpreadsheetPath);
 
-    // dispara a automação (não usar await, para não travar o servidor)
+    // dispara a automação usando o arquivo de trabalho
     startAutomation({
       ...cfg,
-      FATURAMENTO_FIMCA: filePath,
+      FATURAMENTO_FIMCA: workingSpreadsheetPath,
     });
 
     return res.json({ ok: true });

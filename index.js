@@ -176,6 +176,15 @@ export async function startAutomation(overrideConfig = {}) {
     }
     running = false;
     logger.info("✅ Execução encerrada.");
+
+    // ✅ avisa o server para salvar/renomear a planilha final
+    try {
+      if (typeof global.onAutomationFinished === "function") {
+        global.onAutomationFinished();
+      }
+    } catch {
+      // não interrompe encerramento
+    }
   }
 }
 
