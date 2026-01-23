@@ -2,6 +2,7 @@
 import {
   inserirCPF,
   inserirCNAE,
+  inserirAtividadeMunicipal,
   inserirMensagem,
   inserirValor,
   inserirDataEmissao,
@@ -37,6 +38,9 @@ export async function processarAluno(page, aluno, index, alunos) {
 
     // 💼 Seleciona o código CNAE (fixo no sistema atual)
     await inserirCNAE(page);
+
+    // 💼 Seleciona a Atividade Municipal (fixo no sistema atual)
+    await inserirAtividadeMunicipal(page);
 
     // 📝 Escreve a mensagem de descrição da nota com curso e competência
     await inserirMensagem(page, aluno);

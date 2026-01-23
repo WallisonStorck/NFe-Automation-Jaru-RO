@@ -1,5 +1,7 @@
 // Lida com a interface: configurações, status e logs
 
+import { CONFIG } from "../config";
+
 // Atualiza o texto de status
 function setStatus(msg) {
   const status = document.getElementById("status");
@@ -122,7 +124,9 @@ async function sendConfigAndSpreadsheet() {
     }
 
     setStatus("Automação iniciada.");
-    addLog("🚀 Automação iniciada com sucesso.");
+    if (CONFIG.VERBOSE) {
+      addLog("🚀 Automação iniciada com sucesso.");
+    }
   } catch (err) {
     setStatus("Erro ao iniciar...");
     addLog("❌ Falha ao comunicar com o servidor: " + err.message);

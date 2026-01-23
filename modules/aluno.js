@@ -165,6 +165,100 @@ export async function inserirCNAE(page) {
   }
 }
 
+export async function inserirAtividadeMunicipal(page) {
+  logger.info("⏳ Inserindo Atividade Municipal...");
+
+  // ⚠️ Aqui está o campo REAL (select oculto)
+  const SELECT_SEL = "#formEmissaoNFConvencional\\:listaAtvAtd_input";
+  const LABEL_SEL = "#formEmissaoNFConvencional\\:listaAtvAtd_label";
+
+  const TEXTO_ALVO = "080102 - Ensino regular superior.";
+  const CODIGO_ALVO = "080102";
+
+  // 1) Espera o select existir
+  await page.waitForSelector(SELECT_SEL, { visible: true, timeout: 30000 });
+
+  // 2) Espera a opção do código aparecer (porque depende do CNAE)
+  //    Isso garante que você já selecionou o CNAE antes.
+  logger.info(
+    "⏳ Aguardando opções da Atividade Municipal carregarem (dependente do CNAE)..."
+  );
+  await page.waitForFunction(
+    (sel, codigo) => {
+      const select = document.querySelector(sel);
+      if (!select) return false;
+      const options = Array.from(select.querySelectorAll("option"));
+      return options.some((op) => (op.textContent || "").includes(codigo));
+    },
+    { timeout: 30000 },
+    SELECT_SEL,
+    CODIGO_ALVO
+  );
+
+  // 3) Descobre o value exato da opção 080102 e seleciona
+  const valueAlvo = await page.evaluate(
+    (sel, texto) => {
+      const select = document.querySelector(sel);
+      const options = Array.from(select.querySelectorAll("option"));
+      const opt = options.find((o) => (o.textContent || "").trim() === texto);
+      return opt ? opt.value : null;
+    },
+    SELECT_SEL,
+    TEXTO_ALVO
+  );
+
+  if (!valueAlvo) {
+    throw new Error(
+      `Não encontrou a opção "${TEXTO_ALVO}" no select de Atividade Municipal.`
+    );
+  }
+
+  if (CONFIG.VERBOSE) {
+    logger.info(`🔎 Value encontrado para "${TEXTO_ALVO}": ${valueAlvo}`);
+  }
+
+  // 4) Seleciona no select (isso dispara change no Puppeteer)
+  await page.select(SELECT_SEL, valueAlvo);
+
+  // 5) PrimeFaces às vezes precisa de blur/tab para processar
+  await page.focus(SELECT_SEL).catch(() => {});
+  await page.keyboard.press("Tab");
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  // 6) Confirma se o label atualizou
+  let atividadePreenchida = await page.evaluate((sel) => {
+    return document.querySelector(sel)?.textContent?.trim() || "";
+  }, LABEL_SEL);
+
+  if (CONFIG.VERBOSE) {
+    logger.info(
+      `🔎 Atividade Municipal atual: "${atividadePreenchida || "[vazio]"}"`
+    );
+  }
+
+  // 7) Se o label não atualizou ainda, espera mais um pouco (ajax)
+  if (!atividadePreenchida.includes(CODIGO_ALVO)) {
+    logger.warn(
+      "⏳ Atividade Municipal ainda não refletiu no label. Aguardando processamento..."
+    );
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    atividadePreenchida = await page.evaluate((sel) => {
+      return document.querySelector(sel)?.textContent?.trim() || "";
+    }, LABEL_SEL);
+  }
+
+  if (!atividadePreenchida.includes(CODIGO_ALVO)) {
+    throw new Error(
+      `Falha ao selecionar Atividade Municipal. Label permaneceu: "${
+        atividadePreenchida || "[vazio]"
+      }"`
+    );
+  }
+
+  logger.info("✅ Atividade Municipal inserida com sucesso!");
+}
+
 export async function inserirMensagem(page, aluno) {
   logger.info(`💬 Inserindo mensagem...`);
   let dataEmissaoFinal = CONFIG.DATA_EMISSAO_MANUAL;

@@ -170,10 +170,9 @@ node index.js
 
 ## 🛟 Dicas & Solução de Problemas
 
-- **Sessão já ativa**: o sistema detecta sentinelas da tela de emissão e **pula o login**.
-- **Travou na home**: a função `ensurePaginaEmissao` força ida à tela correta e valida por seletores.
-- **CPF não encontrado**: após `MAX_TENTATIVAS_CPF`, o aluno é **ignorado** (sem derrubar a automação).
-- **Encerramento**: `CTRL+C` realiza **graceful shutdown** (fecha navegador e preserva planilha).
+- **Nota**: Notas feitas mas que no log aparece: "⚠️ Falha na emissão para FULANO DA SILVA. Registro pendente!".
+
+- **Dados da nota**: Não está pegando os dados da nota, mas eles aparecem na página...
 
 ---
 

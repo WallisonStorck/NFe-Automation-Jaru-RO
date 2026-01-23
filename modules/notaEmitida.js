@@ -62,7 +62,7 @@ export async function registrarInformacoesNota(page) {
   // 🔁 Redirecionar de volta à tela de emissão (caso permitido)
   if (!CONFIG.SKIP_CONFIRMATION && !CONFIG.TEST_MODE) {
     try {
-      logger.info("↩️  Retornando para a tela de emissão de notas...");
+      logger.info("↩️ Retornando para a tela de emissão de notas...");
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
