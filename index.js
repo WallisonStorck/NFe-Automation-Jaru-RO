@@ -197,7 +197,7 @@ export async function stopAutomation() {
     return;
   }
 
-  logger.warn("🛑 Solicitação de parada recebida pela interface.");
+  logger.warn("⚠️ Preparando para encerrar a automação com segurança...");
   shouldStop = true;
 }
 

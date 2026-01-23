@@ -221,11 +221,20 @@ let workingSpreadsheetPath = null;
 function finalizarPlanilha() {
   if (!workingSpreadsheetPath) return;
 
-  // Ex: Processados_2026-01-22_22-55-10.xlsx
-  const ts = new Date()
-    .toISOString()
-    .replace("T", "_")
-    .replace(/\..+$/, "")
+  // Ex: Processados_22-01-2026_22-55-10.xlsx
+  const ts = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Porto_Velho",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  })
+    .format(new Date())
+    .replace(/\//g, "-")
+    .replace(",", "")
     .replace(/:/g, "-");
 
   const finalPath = path.join(PROCESSED_PATH, `Processados_${ts}.xlsx`);
@@ -237,10 +246,10 @@ function finalizarPlanilha() {
     }
 
     fs.renameSync(workingSpreadsheetPath, finalPath);
-    console.log("✅ Planilha final salva em:", finalPath);
+    console.log("[SUCESS] ✅ Planilha final salva em:", finalPath);
 
     if (typeof global.sendLogToUI === "function") {
-      global.sendLogToUI(`✅ Planilha final salva em: ${finalPath}`);
+      global.sendLogToUI(`[SUCESS] ✅ Planilha final salva em: ${finalPath}`);
     }
 
     // limpa estado

@@ -13,20 +13,13 @@ let sheetNameGlobal;
  * Suporta pontos de milhar e vírgula decimal.
  */
 function extrairValorNumerico(aluno) {
-  const colunas = [
-    "B.C NF",
-    "B.C ISS",
-    "VALOR",
-    "VALOR NF",
-    "VALOR ISS",
-    "VALORORIGINAL",
-  ];
+  const colunas = ["B.C NF", "B.C ISS", "VALOR", "VALOR NF", "VALOR ISS"];
 
   for (const c of colunas) {
     const bruto = aluno[c];
     if (bruto !== undefined && bruto !== null && bruto !== "") {
       const numerico = parseFloat(
-        bruto.toString().replace(/\./g, "").replace(",", ".")
+        bruto.toString().replace(/\./g, "").replace(",", "."),
       );
       if (!Number.isNaN(numerico)) {
         return { ok: true, valor: numerico, coluna: c };
@@ -98,7 +91,7 @@ function marcarDuplicatas(alunos) {
         aluno.PROCESSADO = "DUPLICADO";
       }
       logger.warn(
-        `⚠️ Registro duplicado encontrado no índice ${index}: ${aluno.ALUNO}`
+        `⚠️ Registro duplicado encontrado no índice ${index}: ${aluno.ALUNO}`,
       );
       duplicatasEncontradas = true;
     } else {
@@ -108,7 +101,7 @@ function marcarDuplicatas(alunos) {
 
   if (duplicatasEncontradas) {
     logger.warn(
-      "⚠️ Alguns registros foram marcados como 'DUPLICADO' e serão ignorados na automação."
+      "⚠️ Alguns registros foram marcados como 'DUPLICADO' e serão ignorados na automação.",
     );
   }
 }
@@ -243,7 +236,7 @@ export function carregarPlanilha(caminho) {
       xlsx.writeFile(workbook, caminho);
       if (CONFIG.VERBOSE) {
         logger.info(
-          "✅ Coluna PROCESSADO atualizada (layout original preservado)."
+          "✅ Coluna PROCESSADO atualizada (layout original preservado).",
         );
       }
     }
@@ -267,7 +260,7 @@ export function atualizarAlunoNaPlanilha(alunos, index) {
   // Valida índice recebido
   if (typeof index !== "number" || index < 0 || index >= alunos.length) {
     logger.error(
-      `❌ Índice ${index} fora dos limites da planilha (tamanho: ${alunos.length}).`
+      `❌ Índice ${index} fora dos limites da planilha (tamanho: ${alunos.length}).`,
     );
     return;
   }
@@ -283,8 +276,8 @@ export function atualizarAlunoNaPlanilha(alunos, index) {
   ) {
     logger.error(
       `❌ NÃO foi possível atualizar o aluno no índice ${index}: tipo inválido (${typeof aluno}). Valor: ${JSON.stringify(
-        aluno
-      )}`
+        aluno,
+      )}`,
     );
     return;
   }
@@ -299,11 +292,11 @@ export function atualizarAlunoNaPlanilha(alunos, index) {
     xlsx.writeFile(workbookGlobal, caminhoGlobal);
 
     logger.info(
-      `💾 "${aluno.ALUNO || "[sem nome]"}" marcado como PROCESSADO !`
+      `💾 "${aluno.ALUNO || "[sem nome]"}" marcado como PROCESSADO !`,
     );
   } catch (error) {
     logger.error(
-      `❌ ERRO ao salvar planilha para aluno "${aluno.ALUNO || "[sem nome]"}"`
+      `❌ ERRO ao salvar planilha para aluno "${aluno.ALUNO || "[sem nome]"}"`,
     );
     logger.error(`🔎 Detalhes: ${error.message}`);
     encerrarAutomacao("Falha ao salvar na planilha.");

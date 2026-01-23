@@ -158,7 +158,7 @@ window.onload = () => {
   // Botão parar
   document.getElementById("stopBtn")?.addEventListener("click", async () => {
     setStatus("Solicitando parada...");
-    addLog("🛑 Enviando solicitação de parada...");
+    // addLog("🛑 Enviando solicitação de parada...");
 
     try {
       const res = await fetch("/stop", { method: "POST" });
@@ -171,7 +171,7 @@ window.onload = () => {
       }
 
       setStatus("Parada solicitada.");
-      addLog("⚠️ Automação será encerrada com segurança.");
+      // addLog("[WARN] ⚠️ Automação será encerrada com segurança.");
     } catch (err) {
       setStatus("Erro ao parar.");
       addLog("❌ Falha ao comunicar com o servidor: " + err.message);
