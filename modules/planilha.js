@@ -8,6 +8,25 @@ let workbookGlobal;
 let caminhoGlobal;
 let sheetNameGlobal;
 
+// ✅ Coluna de valor detectada automaticamente (última coluna do cabeçalho)
+let colunaValorDetectada = null;
+
+/**
+ * ✅ Obtém a última coluna preenchida no cabeçalho da planilha
+ * (Regra: a última coluna é a coluna do valor da mensalidade)
+ */
+function getUltimaColuna(sheet) {
+  const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, blankrows: false });
+  const headerRow = rows[0] || [];
+
+  for (let i = headerRow.length - 1; i >= 0; i--) {
+    const h = String(headerRow[i] ?? "").trim();
+    if (h) return h;
+  }
+
+  return null;
+}
+
 /**
  * 🔢 Extrai e normaliza o valor numérico da planilha (primeira coluna válida)
  * Suporta pontos de milhar e vírgula decimal.
@@ -15,12 +34,40 @@ let sheetNameGlobal;
 function extrairValorNumerico(aluno) {
   const colunas = ["B.C NF", "B.C ISS", "VALOR", "VALOR NF", "VALOR ISS"];
 
+  // ✅ conversão mais tolerante: aceita "R$ 1.781,50", espaços, etc.
+  const toNumber = (v) => {
+    if (v === undefined || v === null || v === "") return NaN;
+    const n = parseFloat(
+      v
+        .toString()
+        .replace(/[R$\s]/g, "")
+        .replace(/\./g, "")
+        .replace(",", "."),
+    );
+    return Number.isNaN(n) ? NaN : n;
+  };
+
+  // ✅ PRIORIDADE: usar a última coluna do cabeçalho (quando detectada)
+  if (colunaValorDetectada && colunaValorDetectada in aluno) {
+    const bruto = aluno[colunaValorDetectada];
+    const numerico = toNumber(bruto);
+
+    if (!Number.isNaN(numerico)) {
+      return { ok: true, valor: numerico, coluna: colunaValorDetectada };
+    }
+
+    return {
+      ok: false,
+      motivo: `valor inválido na coluna "${colunaValorDetectada}"`,
+      coluna: colunaValorDetectada,
+    };
+  }
+
+  // Fallback: colunas fixas conhecidas
   for (const c of colunas) {
     const bruto = aluno[c];
     if (bruto !== undefined && bruto !== null && bruto !== "") {
-      const numerico = parseFloat(
-        bruto.toString().replace(/\./g, "").replace(",", "."),
-      );
+      const numerico = toNumber(bruto);
       if (!Number.isNaN(numerico)) {
         return { ok: true, valor: numerico, coluna: c };
       }
@@ -31,6 +78,7 @@ function extrairValorNumerico(aluno) {
       };
     }
   }
+
   return { ok: false, motivo: "nenhuma coluna de valor encontrada" };
 }
 
@@ -155,6 +203,14 @@ export function carregarPlanilha(caminho) {
   const workbook = xlsx.readFile(caminho);
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
+
+  // ✅ Detecta a coluna do valor pela última coluna do cabeçalho
+  colunaValorDetectada = getUltimaColuna(sheet);
+  if (colunaValorDetectada) {
+    logger.warn(
+      `ℹ️ Coluna de valor definida como última coluna: "${colunaValorDetectada}"`,
+    );
+  }
 
   // Carrega todos os registros, mesmo com campos vazios
   let alunos = xlsx.utils.sheet_to_json(sheet, { defval: "" });
