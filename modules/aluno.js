@@ -312,46 +312,118 @@ export async function inserirMensagem(page, aluno) {
   }
 }
 
+// export async function inserirValor(page, aluno) {
+//   // Lista de possíveis nomes para a coluna de valor
+//   const colunasPossiveis = [
+//     "B.C NF",
+//     "B.C ISS",
+//     "VALOR",
+//     "VALOR NF",
+//     "VALOR ISS",
+//     "VALORORIGINAL",
+//   ];
+
+//   // Tenta encontrar a primeira coluna que existe nos dados do aluno
+//   let valorNotaBruto;
+//   for (let coluna of colunasPossiveis) {
+//     if (
+//       aluno[coluna] !== undefined &&
+//       aluno[coluna] !== null &&
+//       aluno[coluna] !== ""
+//     ) {
+//       valorNotaBruto = aluno[coluna];
+//       break;
+//     }
+//   }
+
+//   if (valorNotaBruto === undefined) {
+//     logger.error(
+//       `❌ Valor da nota não encontrado para o aluno ${
+//         aluno.ALUNO
+//       }. Nenhuma coluna válida localizada (${colunasPossiveis.join(", ")})`,
+//     );
+//     return false;
+//   }
+
+//   // Conversão segura para número e formatação com 2 casas decimais
+//   const valorNumerico = parseFloat(valorNotaBruto.toString().replace(",", "."));
+
+//   if (isNaN(valorNumerico)) {
+//     logger.error(
+//       `❌ Valor inválido detectado para ${aluno.ALUNO}: ${valorNotaBruto}`,
+//     );
+//     return false;
+//   }
+
+//   if (valorNumerico === 0) {
+//     logger.warn(
+//       `⚠️ Valor da nota para o aluno ${aluno.ALUNO} é R$ 0,00. Pulando emissão.`,
+//     );
+//     return false;
+//   }
+
+//   // Garante que o valor tem duas casas decimais e formato com vírgula
+//   const valorFormatado = valorNumerico.toFixed(2).replace(".", ",");
+
+//   // Limpa o campo antes de digitar
+//   await page.click("#formEmissaoNFConvencional\\:vlrUnitario_input", {
+//     clickCount: 3,
+//   });
+//   await page.keyboard.press("Backspace");
+//   await page.keyboard.press("Delete");
+
+//   // Digita o valor lentamente
+//   for (let char of valorFormatado) {
+//     await page.type("#formEmissaoNFConvencional\\:vlrUnitario_input", char, {
+//       delay: 150,
+//     });
+//   }
+
+//   logger.info(`💵 Valor digitado: R$ ${valorFormatado}`);
+
+//   // Dispara evento de mudança
+//   await page.evaluate(() => {
+//     const input = document.querySelector(
+//       "#formEmissaoNFConvencional\\:vlrUnitario_input",
+//     );
+//     if (input) {
+//       input.dispatchEvent(new Event("change", { bubbles: true }));
+//     }
+//   });
+
+//   await new Promise((resolve) => setTimeout(resolve, 1000));
+
+//   // Valida o valor final no campo (tratando ponto de milhar)
+//   const valorNoCampo = await page.evaluate(() => {
+//     const input = document.querySelector(
+//       "#formEmissaoNFConvencional\\:vlrUnitario_input",
+//     );
+//     return input?.value.trim();
+//   });
+
+//   const esperadoNormalizado = valorFormatado.replace(/\./g, "");
+//   const campoNormalizado = valorNoCampo.replace(/\./g, "");
+
+//   if (campoNormalizado !== esperadoNormalizado) {
+//     logger.error(
+//       `❌ Divergência detectada ao digitar valor para ${aluno.ALUNO}: esperado "${valorFormatado}", mas o campo ficou "${valorNoCampo}"`,
+//     );
+//     return false;
+//   }
+
+//   return true;
+// }
+
 export async function inserirValor(page, aluno) {
-  // Lista de possíveis nomes para a coluna de valor
-  const colunasPossiveis = [
-    "B.C NF",
-    "B.C ISS",
-    "VALOR",
-    "VALOR NF",
-    "VALOR ISS",
-    "VALORORIGINAL",
-  ];
+  // ✅ Valor canônico vindo do planilha.js
+  const valorNumerico =
+    typeof aluno?.__VALOR_NUM === "number" ? aluno.__VALOR_NUM : NaN;
 
-  // Tenta encontrar a primeira coluna que existe nos dados do aluno
-  let valorNotaBruto;
-  for (let coluna of colunasPossiveis) {
-    if (
-      aluno[coluna] !== undefined &&
-      aluno[coluna] !== null &&
-      aluno[coluna] !== ""
-    ) {
-      valorNotaBruto = aluno[coluna];
-      break;
-    }
-  }
-
-  if (valorNotaBruto === undefined) {
+  if (Number.isNaN(valorNumerico)) {
     logger.error(
-      `❌ Valor da nota não encontrado para o aluno ${
-        aluno.ALUNO
-      }. Nenhuma coluna válida localizada (${colunasPossiveis.join(", ")})`,
+      `❌ Valor inválido ou não detectado para ${aluno.ALUNO}. Coluna detectada: "${aluno.__COLUNA_VALOR || "?"}" | Bruto: "${aluno.__VALOR_BRUTO || ""}"`,
     );
-    return false;
-  }
 
-  // Conversão segura para número e formatação com 2 casas decimais
-  const valorNumerico = parseFloat(valorNotaBruto.toString().replace(",", "."));
-
-  if (isNaN(valorNumerico)) {
-    logger.error(
-      `❌ Valor inválido detectado para ${aluno.ALUNO}: ${valorNotaBruto}`,
-    );
     return false;
   }
 

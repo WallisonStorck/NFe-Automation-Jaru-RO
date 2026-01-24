@@ -11,6 +11,32 @@ let sheetNameGlobal;
 // ✅ Coluna de valor detectada automaticamente (última coluna do cabeçalho)
 let colunaValorDetectada = null;
 
+function getHeaderMap(sheet) {
+  const rows = xlsx.utils.sheet_to_json(sheet, {
+    header: 1,
+    blankrows: false,
+  });
+  const headerRow = rows[0] || [];
+  const map = new Map(); // header -> colIndex
+  headerRow.forEach((h, i) => map.set(String(h ?? "").trim(), i));
+  return { map, headerRow };
+}
+
+// ✅ Parser único de moeda/valor (aceita "R$ 1.781,50", "1781,50", "1.781,50", etc.)
+function parseMoney(v) {
+  if (v === undefined || v === null || v === "") return NaN;
+
+  const n = parseFloat(
+    v
+      .toString()
+      .replace(/[R$\s]/g, "")
+      .replace(/\./g, "")
+      .replace(",", "."),
+  );
+
+  return Number.isNaN(n) ? NaN : n;
+}
+
 /**
  * ✅ Obtém a última coluna preenchida no cabeçalho da planilha
  * (Regra: a última coluna é a coluna do valor da mensalidade)
@@ -32,6 +58,18 @@ function getUltimaColuna(sheet) {
  * Suporta pontos de milhar e vírgula decimal.
  */
 function extrairValorNumerico(aluno) {
+  // ✅ Se já temos valor canônico, usa ele
+  if (
+    typeof aluno?.__VALOR_NUM === "number" &&
+    !Number.isNaN(aluno.__VALOR_NUM)
+  ) {
+    return {
+      ok: true,
+      valor: aluno.__VALOR_NUM,
+      coluna: aluno.__COLUNA_VALOR || "AUTO",
+    };
+  }
+
   const colunas = ["B.C NF", "B.C ISS", "VALOR", "VALOR NF", "VALOR ISS"];
 
   // ✅ conversão mais tolerante: aceita "R$ 1.781,50", espaços, etc.
@@ -80,17 +118,6 @@ function extrairValorNumerico(aluno) {
   }
 
   return { ok: false, motivo: "nenhuma coluna de valor encontrada" };
-}
-
-/** =========================
- *  Helpers de cabeçalho/célula
- *  ========================= */
-function getHeaderMap(sheet) {
-  const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, blankrows: false });
-  const headerRow = rows[0] || [];
-  const map = new Map(); // header -> colIndex
-  headerRow.forEach((h, i) => map.set(String(h ?? ""), i));
-  return { map, headerRow };
 }
 
 function ensureProcessadoColumn(sheet) {
@@ -174,6 +201,12 @@ function normalizarPrimeiraVez(workbook, sheetName, alunos) {
   cols = cols.filter((h) => h && h !== "PROCESSADO");
   cols.push("PROCESSADO");
 
+  // ✅ Garante que a coluna do valor detectada (ex: "LIQU") não seja perdida na normalização
+  if (colunaValorDetectada && !cols.includes(colunaValorDetectada)) {
+    // insere antes do PROCESSADO (última coluna)
+    cols.splice(cols.length - 1, 0, colunaValorDetectada);
+  }
+
   // monta objetos "enxutos" só com as colunas essenciais, na ordem desejada
   const enxutos = alunos.map((a) => {
     const obj = {};
@@ -227,6 +260,15 @@ export function carregarPlanilha(caminho) {
     );
   });
 
+  // ✅ Define valor canônico baseado na última coluna detectada (ex: "LIQU")
+  for (let aluno of alunos) {
+    aluno.__COLUNA_VALOR = colunaValorDetectada;
+    aluno.__VALOR_BRUTO = colunaValorDetectada
+      ? aluno[colunaValorDetectada]
+      : "";
+    aluno.__VALOR_NUM = parseMoney(aluno.__VALOR_BRUTO);
+  }
+
   // Persistentes globais
   caminhoGlobal = caminho;
   workbookGlobal = workbook;
@@ -273,28 +315,26 @@ export function carregarPlanilha(caminho) {
   // marcarDuplicatas(alunos);
 
   try {
-    if (primeiraVez) {
-      // 🔧 PRIMEIRA VEZ: normaliza colunas e salva
-      alunos = normalizarPrimeiraVez(workbook, sheetName, alunos);
-      xlsx.writeFile(workbook, caminho);
-      if (CONFIG.VERBOSE) {
-        logger.info("✅ Planilha normalizada (colunas essenciais) e salva.");
-      }
-    } else {
-      // 🔁 PRÓXIMAS VEZES: escreve só a coluna PROCESSADO por célula
-      const currentSheet = workbook.Sheets[sheetName];
-      // header = linha 1, dados começam na linha 2
-      for (let i = 0; i < alunos.length; i++) {
-        const row1 = 2 + i;
-        const v = alunos[i]?.PROCESSADO ?? "";
-        writeProcessadoCell(currentSheet, row1, v);
-      }
-      xlsx.writeFile(workbook, caminho);
-      if (CONFIG.VERBOSE) {
-        logger.info(
-          "✅ Coluna PROCESSADO atualizada (layout original preservado).",
-        );
-      }
+    // ✅ Sempre preserva o layout original.
+    // Só garante a coluna PROCESSADO e grava os valores por célula.
+    const currentSheet = workbook.Sheets[sheetName];
+
+    // garante a coluna PROCESSADO existir
+    ensureProcessadoColumn(currentSheet);
+
+    // escreve PROCESSADO por célula
+    for (let i = 0; i < alunos.length; i++) {
+      const row1 = 2 + i; // mesma lógica que você já usava
+      const v = alunos[i]?.PROCESSADO ?? "";
+      writeProcessadoCell(currentSheet, row1, v);
+    }
+
+    xlsx.writeFile(workbook, caminho);
+
+    if (CONFIG.VERBOSE) {
+      logger.info(
+        "✅ Coluna PROCESSADO atualizada (layout original preservado).",
+      );
     }
   } catch (e) {
     logger.error("❌ Falha ao salvar a planilha.");
