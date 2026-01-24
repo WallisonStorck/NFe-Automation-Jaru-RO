@@ -26,14 +26,40 @@ function getHeaderMap(sheet) {
 function parseMoney(v) {
   if (v === undefined || v === null || v === "") return NaN;
 
-  const n = parseFloat(
-    v
-      .toString()
-      .replace(/[R$\s]/g, "")
-      .replace(/\./g, "")
-      .replace(",", "."),
-  );
+  let s = v.toString().trim();
 
+  // remove "R$", espaços e caracteres não numéricos (mantém . , e -)
+  s = s.replace(/[R$\s]/g, "");
+  s = s.replace(/[^0-9,.\-]/g, "");
+
+  if (!s) return NaN;
+
+  const hasComma = s.includes(",");
+  const hasDot = s.includes(".");
+
+  // Caso 1: tem vírgula e ponto -> decide decimal pelo último separador
+  if (hasComma && hasDot) {
+    const lastComma = s.lastIndexOf(",");
+    const lastDot = s.lastIndexOf(".");
+
+    if (lastDot > lastComma) {
+      // Formato tipo 9,754.71 -> vírgula milhar, ponto decimal
+      s = s.replace(/,/g, "");
+      // ponto fica como decimal
+    } else {
+      // Formato tipo 9.754,71 -> ponto milhar, vírgula decimal
+      s = s.replace(/\./g, "");
+      s = s.replace(/,/g, ".");
+    }
+  } else if (hasComma && !hasDot) {
+    // Caso 2: só vírgula -> assume vírgula decimal (BR)
+    s = s.replace(/,/g, ".");
+  } else {
+    // Caso 3: só ponto ou nenhum -> assume ponto decimal (ok)
+    // não mexe
+  }
+
+  const n = parseFloat(s);
   return Number.isNaN(n) ? NaN : n;
 }
 
@@ -47,7 +73,12 @@ function getUltimaColuna(sheet) {
 
   for (let i = headerRow.length - 1; i >= 0; i--) {
     const h = String(headerRow[i] ?? "").trim();
-    if (h) return h;
+    if (!h) continue;
+
+    // ✅ nunca usar PROCESSADO como coluna de valor
+    if (h.toUpperCase() === "PROCESSADO") continue;
+
+    return h;
   }
 
   return null;
@@ -242,6 +273,10 @@ export function carregarPlanilha(caminho) {
   if (colunaValorDetectada) {
     logger.warn(
       `ℹ️ Coluna de valor definida como última coluna: "${colunaValorDetectada}"`,
+    );
+  } else {
+    logger.error(
+      "❌ Não foi possível detectar a coluna de valor (última coluna válida).",
     );
   }
 
