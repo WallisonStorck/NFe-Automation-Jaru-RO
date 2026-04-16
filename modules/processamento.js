@@ -1,8 +1,11 @@
 // processamento.js (Processa cada aluno)
 import {
   inserirCPF,
-  inserirCNAE,
+  // inserirCNAE,
   inserirAtividadeMunicipal,
+  inserirNBS,
+  inserirCodigoIndicadorOperacao,
+  inserirClassificacaoTributaria,
   inserirMensagem,
   inserirValor,
   inserirDataEmissao,
@@ -13,15 +16,19 @@ import {
 import { logger } from "../modules/logger.js";
 import { registrarInformacoesNota } from "./notaEmitida.js";
 import { atualizarAlunoNaPlanilha } from "./planilha.js";
+import { ensurePaginaEmissao } from "./sessao.js";
 
 // 🧠 Função principal que processa um aluno e tenta emitir a NFS-e
 export async function processarAluno(page, aluno, index, alunos) {
   logger.info(
-    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
   );
   logger.info(`👤 Aluno(a) selecionado(a): ${aluno.ALUNO}`);
 
   try {
+    // ✅ Garante que está na tela correta antes de iniciar o processamento do aluno
+    await ensurePaginaEmissao(page, "início do processamento do aluno");
+
     // 🗓️ Insere a data de emissão (automático)
     await inserirDataEmissao(page);
 
@@ -37,10 +44,19 @@ export async function processarAluno(page, aluno, index, alunos) {
     }
 
     // 💼 Seleciona o código CNAE (fixo no sistema atual)
-    await inserirCNAE(page);
+    // await inserirCNAE(page);
 
     // 💼 Seleciona a Atividade Municipal (fixo no sistema atual)
     await inserirAtividadeMunicipal(page);
+
+    // 💼 Seleciona o NBS
+    await inserirNBS(page);
+
+    // 💼 Seleciona o Código Indicador da Operação
+    await inserirCodigoIndicadorOperacao(page);
+
+    // 💼 Seleciona a Classificação Tributária
+    await inserirClassificacaoTributaria(page);
 
     // 📝 Escreve a mensagem de descrição da nota com curso e competência
     await inserirMensagem(page, aluno);
@@ -49,7 +65,7 @@ export async function processarAluno(page, aluno, index, alunos) {
     const valorOK = await inserirValor(page, aluno);
     if (!valorOK) {
       logger.warn(
-        `⏭️ Nota NÃO emitida para ${aluno.ALUNO} devido a valor inválido ou zerado.`
+        `⏭️ Nota NÃO emitida para ${aluno.ALUNO} devido a valor inválido ou zerado.`,
       );
       return false; // Impede avanço no processamento, mas NÃO derruba a automação
     }
@@ -69,13 +85,20 @@ export async function processarAluno(page, aluno, index, alunos) {
       global.ultimoProcessado = { alunos, index };
     } else {
       logger.warn(
-        `⚠️ Falha na emissão para ${aluno.ALUNO}. Registro pendente!`
+        `⚠️ Falha na emissão para ${aluno.ALUNO}. Registro pendente!`,
       );
     }
 
     logger.info("✅ Processamento da nota concluída!");
     return true; // Tudo OK
   } catch (error) {
+    // ✅ Tenta recuperar a tela de emissão antes de seguir
+    try {
+      await ensurePaginaEmissao(page, "recuperação após erro no aluno");
+    } catch {
+      // não impede o tratamento do erro original
+    }
+
     // >>> Mudança mínima: se o erro for o de CPF, não derruba; caso contrário, mantém comportamento original <<<
     const msg = error?.message?.toLowerCase?.() || "";
     const ehFalhaCPF =
@@ -83,7 +106,7 @@ export async function processarAluno(page, aluno, index, alunos) {
 
     if (ehFalhaCPF) {
       logger.warn(
-        `⏭️ Falha de CPF tratada para "${aluno.ALUNO}". Pulando aluno.`
+        `⏭️ Falha de CPF tratada para "${aluno.ALUNO}". Pulando aluno.`,
       );
       return false; // NÃO derruba a automação
     }

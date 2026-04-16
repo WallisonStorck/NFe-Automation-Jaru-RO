@@ -1,8 +1,8 @@
-# 📌 NF‑e Automation (Jaru/RO)
+# 📌 NFS‑e Automation — ISS Web (Fiorilli)
 
-Automação em **Node.js + Puppeteer** para emissão de **NFS‑e** no portal da Prefeitura de **Jaru (RO)**, lendo uma planilha Excel com dados dos alunos e interagindo no site como um usuário humano.
+Automação em **Node.js + Puppeteer** para emissão de **NFS‑e** em portais **ISS Web da Fiorilli**, lendo uma planilha Excel com dados dos tomadores e interagindo no site como um usuário humano.
 
-> **Aviso**: Este projeto automatiza um processo sensível (emissão fiscal). Use credenciais próprias e revise as regras locais antes de utilizar em produção.
+> **Aviso**: Este projeto automatiza um processo sensível (emissão fiscal). Use credenciais próprias e revise as regras do município antes de utilizar em produção.
 
 ---
 
@@ -18,19 +18,19 @@ Automação em **Node.js + Puppeteer** para emissão de **NFS‑e** no portal da
 
 ## ✅ Funcionalidades
 
-- Login automático no portal da Prefeitura (com **reuso de cookies** quando possível)
+- Login automático no portal ISS Web (com **reuso de cookies** quando possível)
 - Detecção idempotente de sessão (evita relogar quando já está autenticado)
 - Preenchimento automático de:
   - Tipo de pessoa (Física)
-  - **CPF** (com múltiplas tentativas e fallback para **pular o aluno**)
-  - **CNAE** fixo do serviço
+  - **CPF** (com múltiplas tentativas e fallback para **pular o registro**)
+  - Atividade Municipal, NBS, Código Indicador da Operação e Classificação Tributária (configuráveis)
   - Mensagem/descrição (templates por código de serviço)
   - **Valor** (validação de formato e rejeição de `0` ou inválido)
 
 - Adição de item, salvamento e confirmação da nota (configurável)
 - Captura dos dados da NFS‑e emitida (número, código de verificação, etc.)
 - Atualização da planilha marcando **PROCESSADO = "SIM"**
-- Marcação automática de **DUPLICADOS** (mesmo ALUNO + CPF + valor)
+- Marcação automática de **DUPLICADOS** (mesmo tomador + CPF + valor)
 - Logs detalhados e **encerramento seguro** (CTRL+C)
 
 ---
@@ -38,23 +38,26 @@ Automação em **Node.js + Puppeteer** para emissão de **NFS‑e** no portal da
 ## 📂 Estrutura do Projeto
 
 ```
-📦 NF-E-AUTOMATION
-├─ 📁 docs/
-│  └─ FATURAMENTO.xlsx          # Planilha de entrada
+📦 NFS-E-AUTOMATION
 ├─ 📁 logs/                     # Logs rotacionados por data (gerado em runtime)
 ├─ 📁 modules/
-│  ├─ aluno.js                  # Helpers: CPF, CNAE, mensagem, valor, salvar, etc.
+│  ├─ aluno.js                  # Helpers: CPF, mensagem, valor, salvar, etc.
 │  ├─ controleExecucao.js       # Encerramento seguro (graceful shutdown)
 │  ├─ logger.js                 # Logger (arquivo + console)
 │  ├─ mensagens.js              # Templates de descrição por serviço
 │  ├─ navegador.js              # Inicialização do navegador
 │  ├─ notaEmitida.js            # Coleta das informações da NFS-e emitida
 │  ├─ planilha.js               # Leitura/atualização da planilha
-│  └─ processamento.js          # Fluxo principal por aluno
-├─ config.js                    # Configurações gerais (sem segredos)
-├─ config.secrets.js            # Credenciais (NÃO versionado)
-├─ cookies.json                 # Cookies de sessão (gerado)
+│  └─ processamento.js          # Fluxo principal por registro
+├─ 📁 ui/
+│  ├─ app.js                    # Lógica da interface gráfica
+│  ├─ index.html                # Interface web
+│  └─ style.css                 # Estilos
+├─ config.js                    # Configurações gerais
+├─ cookies.json                 # Cookies de sessão (gerado em runtime)
 ├─ index.js                     # Script principal (loop de emissão)
+├─ server.js                    # Servidor da interface gráfica
+├─ START.bat                    # Atalho para iniciar no Windows
 ├─ package.json
 └─ README.md
 ```
@@ -63,58 +66,37 @@ Automação em **Node.js + Puppeteer** para emissão de **NFS‑e** no portal da
 
 ## ⚙️ Configuração
 
-### 1) Segredos (não versionado)
+### 1) Configuração geral
 
-Crie **`config.secrets.js`** na raiz e adicione ao `.gitignore`:
+Em **`config.js`** ficam os parâmetros de comportamento da automação. As credenciais e a planilha **não precisam ser editadas aqui** — são informadas diretamente pela interface gráfica.
 
-```js
-// config.secrets.js
-export const SECRETS = {
-  USERNAME: "seu_usuario",
-  PASSWORD: "sua_senha",
-};
-```
-
-### 2) Configuração geral
-
-Em **`config.js`**, os segredos são consumidos e os demais parâmetros ficam visíveis:
+O único parâmetro que pode precisar de ajuste é a **URL do portal**, que varia conforme o município:
 
 ```js
-import { SECRETS } from "./config.secrets.js";
-
 export const CONFIG = {
-  FATURAMENTO_FIMCA: "docs/FATURAMENTO.xlsx",
-  ISS_JARU:
-    "https://servicos.jaru.ro.gov.br/issweb/paginas/admin/notafiscal/convencional/emissaopadrao",
-  COOKIE_FILE: "cookies.json",
+  // 🌐 URL da página de emissão do portal ISS Web do seu município
+  ISS_URL: "https://servicos.seumunicipio.gov.br/issweb/paginas/admin/notafiscal/convencional/emissaopadrao",
 
-  // 🔐 credenciais vindas dos segredos (não versionados)
-  USERNAME: SECRETS.USERNAME,
-  PASSWORD: SECRETS.PASSWORD,
+  COOKIE_FILE: "cookies.json",
 
   // 📅 data manual ("DD/MM/AAAA"), vazio = usar a do portal
   DATA_EMISSAO_MANUAL: "",
 
-  // 👤 tentativas de CPF antes de pular o aluno
+  // 👤 tentativas de CPF antes de pular o registro
   MAX_TENTATIVAS_CPF: 3,
 
   // 🔧 modos de execução
   SKIP_CONFIRMATION: false, // true = não clica "SIM" no modal
-  TEST_MODE: false, // true = processa só 1 aluno
-  VERBOSE: false, // true = logs detalhados
+  TEST_MODE: false,         // true = processa só 1 registro
+  VERBOSE: false,           // true = logs detalhados
 };
 ```
 
-### 3) `.gitignore` sugerido
+### 2) `.gitignore` sugerido
 
 ```gitignore
-# segredos e sessões
-config.secrets.js
+# sessões
 cookies.json
-
-# planilhas e dados sensíveis
-docs/*.xlsx
-Docs/*.xlsx
 
 # logs
 logs/*.log
@@ -130,49 +112,57 @@ node_modules/
 
 ```bash
 npm install
-node index.js
+node server.js
 ```
 
-> Coloque sua planilha em `docs/FATURAMENTO.xlsx`. O script abrirá o navegador, restaurará a sessão se possível, fará login quando necessário e seguirá emitindo as notas para os registros elegíveis.
+Após iniciar, acesse a interface pelo navegador. Por ela você:
+- Informa a **URL do portal** ISS Web do seu município
+- Informa o **usuário e senha** do portal
+- Seleciona a **planilha Excel** com os dados
+- Configura os parâmetros e inicia a automação
 
 ---
 
 ## 🔎 Modos & Flags
 
-| Opção                 | Efeito                                                               |
-| --------------------- | -------------------------------------------------------------------- |
-| `SKIP_CONFIRMATION`   | Simula emissão sem confirmar o modal final (não clica em **SIM**).   |
-| `TEST_MODE`           | Processa apenas o primeiro aluno pendente (debug rápido).            |
-| `VERBOSE`             | Exibe logs estendidos (tentativas, detalhes do DOM, etc.).           |
-| `MAX_TENTATIVAS_CPF`  | Tenta preencher/validar CPF este número de vezes antes de **pular**. |
-| `DATA_EMISSAO_MANUAL` | Força a data informada; vazio usa a do portal.                       |
+| Opção                 | Efeito                                                                  |
+| --------------------- | ----------------------------------------------------------------------- |
+| `SKIP_CONFIRMATION`   | Simula emissão sem confirmar o modal final (não clica em **SIM**).      |
+| `TEST_MODE`           | Processa apenas o primeiro registro pendente (debug rápido).            |
+| `VERBOSE`             | Exibe logs estendidos (tentativas, detalhes do DOM, etc.).              |
+| `MAX_TENTATIVAS_CPF`  | Tenta preencher/validar CPF este número de vezes antes de **pular**.    |
+| `DATA_EMISSAO_MANUAL` | Força a data informada; vazio usa a do portal.                          |
 
 ---
 
 ## 🧪 Exemplo de saída (logs)
 
-```bash
-[08-09-2025 09:08:20] [INFO] 🤖 Iniciando automação...
+```
+[08-09-2025 09:08:20] [INFO] 🤖 Automação iniciada via interface gráfica.
 [08-09-2025 09:08:20] [INFO] 📂 Carregando planilha...
 [08-09-2025 09:08:20] [INFO] ✅ Planilha carregada com sucesso!
 [08-09-2025 09:08:20] [INFO] 🌐 Abrindo navegador...
-[08-09-2025 09:08:36] [INFO] ⏭️ Pulando aluno no índice 0: já processado ou inválido.
+[08-09-2025 09:08:36] [INFO] ⏭️ Pulando registro no índice 0: já processado ou inválido.
 [08-09-2025 09:08:36] [INFO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[08-09-2025 09:08:36] [INFO] 👤 Aluno(a) selecionado(a): "FULANO DA SILVA"
-[08-09-2025 09:08:42] [INFO] ⏳  Buscando cadastro... [Tentativa 1/3]
+[08-09-2025 09:08:36] [INFO] 👤 Aluno(a) selecionado(a): FULANO DA SILVA
+[08-09-2025 09:08:42] [INFO] ⏳ Buscando cadastro... [Tentativa 1/3]
 [08-09-2025 09:18:39] [INFO] ✅ Confirmação realizada, nota salva com sucesso!
 [08-09-2025 09:18:59] [INFO] 💾 Aluno(a) "FULANO DA SILVA" marcado como PROCESSADO!
-[08-09-2025 09:18:59] [INFO] ✅ Processamento do aluno concluído!
+[08-09-2025 09:18:59] [INFO] ✅ Processamento da nota concluída!
 ```
 
 ---
 
 ## 🛟 Dicas & Solução de Problemas
 
-- **-----**: -----".
+- **Registro não encontrado**: O CPF pode não estar cadastrado no portal. O sistema pula automaticamente após `MAX_TENTATIVAS_CPF` tentativas.
+- **Campos dependentes não carregam**: O portal ISS Web usa AJAX para carregar campos em cascata (NBS → Código Indicador → Classificação Tributária). Se algum travar, verifique se os códigos configurados existem no portal do seu município.
+- **Sessão expirada**: O sistema detecta automaticamente e refaz o login usando as credenciais informadas na interface.
+- **Nota não confirmada**: Verifique se `SKIP_CONFIRMATION` está como `false` no `config.js`.
+- **Portal de outro município**: Ajuste a URL em `config.js` e revise os IDs dos campos em `aluno.js` caso o município use uma versão diferente do ISS Web.
 
 ---
 
 ## 🤝 Contribuição
 
-Contribuições são bem-vindas via **Issues** e **Pull Requests**. Para novas integrações ou melhorias, abra uma issue descrevendo o caso.
+Contribuições são bem-vindas via **Issues** e **Pull Requests**. Para adaptar a outros municípios ou adicionar novos campos, abra uma issue descrevendo o caso.

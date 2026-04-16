@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>NFSe Automação</title>
+</head>
+<body>
+  <div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </div>
+        <span class="logo-text">NFSe Auto</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#config" class="nav-item active" onclick="setActive(this)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2"/>
+          </svg>
+          Configurações
+        </a>
+        <a href="#exec" class="nav-item" onclick="setActive(this)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Execução
+        </a>
+        <a href="#logs" class="nav-item" onclick="setActive(this)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+            <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+          Logs
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="status-badge" id="sidebarStatus">
+          <span class="dot idle"></span>
+          <span>Idle</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+      <!-- TOPBAR -->
+      <div class="topbar">
+        <div class="topbar-title">
+          <h1>NFSe — Emissão Automatizada</h1>
+          <p>Sistema corporativo de emissão fiscal</p>
+        </div>
+      </div>
+
+      <!-- CONTENT AREA -->
+      <div class="content">
+
+        <!-- ===== CONFIGURAÇÕES ===== -->
+        <section class="section" id="config">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+              </svg>
+            </div>
+            <h2>Configurações</h2>
+          </div>
+
+          <div class="card">
+            <div class="card-label">Acesso ao Portal</div>
+            <div class="form-row">
+              <div class="field">
+                <label>Usuário</label>
+                <input id="cfgUser" type="text" placeholder="CPF ou CNPJ">
+              </div>
+              <div class="field">
+                <label>Senha</label>
+                <div class="input-icon">
+                  <input id="cfgPass" type="password" placeholder="Senha do portal">
+                  <button class="toggle-pw" onclick="togglePassword()" tabindex="-1">
+                    <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-label">Parâmetros de Emissão</div>
+            <div class="form-row three-col">
+              <div class="field">
+                <label>Ignorar Status</label>
+                <input id="cfgIgnorar" type="text" placeholder="SIM, ZERADO, INVALIDO">
+                <span class="field-hint">Separar por vírgula</span>
+              </div>
+              <div class="field">
+                <label>Data de Emissão (retroativo)</label>
+                <input id="cfgData" type="text" placeholder="DD/MM/AAAA">
+                <span class="field-hint">Vazio = data atual</span>
+              </div>
+              <div class="field">
+                <label>Tentativas por CPF</label>
+                <input id="cfgTentativas" type="number" min="1" max="10" placeholder="3">
+                <span class="field-hint">Máximo: 10</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="note-box">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Campos vazios usarão os valores exibidos como dica (placeholder).
+          </div>
+
+          <div class="actions">
+            <button id="saveConfig" class="btn btn-primary" onclick="saveConfig()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+              </svg>
+              Salvar Configurações
+            </button>
+          </div>
+        </section>
+
+        <!-- ===== EXECUÇÃO ===== -->
+        <section class="section" id="exec">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+            </div>
+            <h2>Execução</h2>
+          </div>
+
+          <div class="card">
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('planilha').click()" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <polyline points="9 15 12 12 15 15"/>
+              </svg>
+              <p class="upload-label">Arraste a planilha aqui ou <span>clique para selecionar</span></p>
+              <p class="upload-hint" id="uploadHint">Aceita .xlsx</p>
+              <input id="planilha" type="file" accept=".xlsx" style="display:none" onchange="handleFile(this)">
+            </div>
+
+            <div class="status-row">
+              <div class="status-indicator">
+                <span class="dot idle" id="statusDot"></span>
+                <span id="status">Aguardando início...</span>
+              </div>
+            </div>
+
+            <div class="exec-actions">
+              <button id="startBtn" class="btn btn-primary" onclick="startAutomation()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Iniciar Automação
+              </button>
+              <button id="stopBtn" class="btn btn-danger" onclick="stopAutomation()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                </svg>
+                Parar Automação
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== LOGS ===== -->
+        <section class="section" id="logs">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+            </div>
+            <h2>Logs da Execução</h2>
+            <button class="btn btn-ghost btn-sm" onclick="clearLog()">Limpar</button>
+          </div>
+          <div class="log-wrapper">
+            <pre id="log">[sistema] Aguardando início da automação...</pre>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    function setActive(el) {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function togglePassword() {
+      const input = document.getElementById('cfgPass');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function saveConfig() {
+      const btn = document.getElementById('saveConfig');
+      btn.textContent = '✓ Salvo!';
+      btn.classList.add('btn-success');
+      setTimeout(() => {
+        btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Salvar Configurações`;
+        btn.classList.remove('btn-success');
+      }, 2000);
+    }
+
+    function handleFile(input) {
+      const hint = document.getElementById('uploadHint');
+      const area = document.getElementById('uploadArea');
+      if (input.files.length) {
+        hint.textContent = '✓ ' + input.files[0].name;
+        area.classList.add('has-file');
+      }
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('uploadArea').classList.remove('drag-over');
+      const dt = e.dataTransfer;
+      if (dt.files.length) {
+        document.getElementById('planilha').files = dt.files;
+        handleFile(document.getElementById('planilha'));
+      }
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      document.getElementById('uploadArea').classList.add('drag-over');
+    }
+
+    function handleDragLeave() {
+      document.getElementById('uploadArea').classList.remove('drag-over');
+    }
+
+    function setStatus(text, state) {
+      document.getElementById('status').textContent = text;
+      const dots = document.querySelectorAll('.dot');
+      dots.forEach(d => { d.className = 'dot ' + state; });
+    }
+
+    function startAutomation() {
+      setStatus('Executando...', 'running');
+      appendLog('[info] Automação iniciada.');
+    }
+
+    function stopAutomation() {
+      setStatus('Parado pelo usuário.', 'idle');
+      appendLog('[warn] Automação interrompida pelo usuário.');
+    }
+
+    function appendLog(msg) {
+      const log = document.getElementById('log');
+      const time = new Date().toLocaleTimeString('pt-BR');
+      log.textContent += `\n[${time}] ${msg}`;
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function clearLog() {
+      document.getElementById('log').textContent = '[sistema] Log limpo.';
+    }
+  </script>
+</body>
+</html>

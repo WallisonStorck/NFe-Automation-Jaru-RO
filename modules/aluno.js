@@ -129,41 +129,41 @@ export async function inserirCPF(page, cpf) {
   }
 }
 
-export async function inserirCNAE(page) {
-  logger.info("⏳ Inserindo CNAE...");
-  let cnaePreenchido = "";
-  do {
-    if (CONFIG.VERBOSE) {
-      logger.info("🔄 Tentando selecionar CNAE...");
-    }
-    await page.evaluate(() => window.scrollBy(0, 300));
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await page.click("#formEmissaoNFConvencional\\:listaAtvCnae_label");
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    await page.evaluate(() => {
-      let opcoes = document.querySelectorAll("li.ui-selectonemenu-item");
-      opcoes.forEach((opcao) => {
-        if (
-          opcao.innerText.includes(
-            "8532500 - Educação superior - graduação e pós-graduação",
-          )
-        ) {
-          opcao.click();
-        }
-      });
-    });
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    await page.click("body");
-    cnaePreenchido = await page.evaluate(() => {
-      return document
-        .querySelector("#formEmissaoNFConvencional\\:listaAtvCnae_label")
-        ?.textContent.trim();
-    });
-  } while (!cnaePreenchido || !cnaePreenchido.includes("8532500"));
-  if (CONFIG.VERBOSE) {
-    logger.info("✅ CNAE inserido com sucesso!.");
-  }
-}
+// export async function inserirCNAE(page) {
+//   logger.info("⏳ Inserindo CNAE...");
+//   let cnaePreenchido = "";
+//   do {
+//     if (CONFIG.VERBOSE) {
+//       logger.info("🔄 Tentando selecionar CNAE...");
+//     }
+//     await page.evaluate(() => window.scrollBy(0, 300));
+//     await new Promise((resolve) => setTimeout(resolve, 1000));
+//     await page.click("#formEmissaoNFConvencional\\:listaAtvCnae_label");
+//     await new Promise((resolve) => setTimeout(resolve, 500));
+//     await page.evaluate(() => {
+//       let opcoes = document.querySelectorAll("li.ui-selectonemenu-item");
+//       opcoes.forEach((opcao) => {
+//         if (
+//           opcao.innerText.includes(
+//             "8532500 - Educação superior - graduação e pós-graduação",
+//           )
+//         ) {
+//           opcao.click();
+//         }
+//       });
+//     });
+//     await new Promise((resolve) => setTimeout(resolve, 2000));
+//     await page.click("body");
+//     cnaePreenchido = await page.evaluate(() => {
+//       return document
+//         .querySelector("#formEmissaoNFConvencional\\:listaAtvCnae_label")
+//         ?.textContent.trim();
+//     });
+//   } while (!cnaePreenchido || !cnaePreenchido.includes("8532500"));
+//   if (CONFIG.VERBOSE) {
+//     logger.info("✅ CNAE inserido com sucesso!.");
+//   }
+// }
 
 export async function inserirAtividadeMunicipal(page) {
   logger.info("⏳ Inserindo Atividade Municipal...");
@@ -263,6 +263,323 @@ export async function inserirAtividadeMunicipal(page) {
   }
 }
 
+// export async function inserirNBS(page) {
+//   logger.info("⏳ Inserindo NBS...");
+
+//   const SELECT_SEL = "#formEmissaoNFConvencional\\:listaNBS_input";
+//   const LABEL_SEL = "#formEmissaoNFConvencional\\:listaNBS_label";
+//   const NEXT_SELECT_SEL = "#formEmissaoNFConvencional\\:listaIndOp_input";
+
+//   const VALUE_ALVO = "122041000";
+//   const TEXTO_ALVO = "122041000 - Serviços educacionais de graduação";
+
+//   try {
+//     // 1) Espera o select existir
+//     await page.waitForSelector(SELECT_SEL, { timeout: 30000 });
+
+//     // 2) Espera a opção correta existir
+//     await page.waitForFunction(
+//       (sel, value) => {
+//         const select = document.querySelector(sel);
+//         if (!select) return false;
+//         return Array.from(select.options).some((opt) => opt.value === value);
+//       },
+//       { timeout: 30000 },
+//       SELECT_SEL,
+//       VALUE_ALVO,
+//     );
+
+//     // 3) Aplica o valor e força o onchange do PrimeFaces
+//     await page.evaluate(
+//       ({ selectSel, labelSel, valueAlvo, textoAlvo }) => {
+//         const select = document.querySelector(selectSel);
+//         const label = document.querySelector(labelSel);
+
+//         if (!select) {
+//           throw new Error("Select de NBS não encontrado.");
+//         }
+
+//         select.value = valueAlvo;
+
+//         // mantém o visual sincronizado
+//         if (label) {
+//           label.textContent = textoAlvo;
+//         }
+
+//         // chama onchange inline do componente
+//         if (typeof select.onchange === "function") {
+//           select.onchange();
+//         }
+
+//         // dispara evento para garantir processamento
+//         select.dispatchEvent(new Event("change", { bubbles: true }));
+//       },
+//       {
+//         selectSel: SELECT_SEL,
+//         labelSel: LABEL_SEL,
+//         valueAlvo: VALUE_ALVO,
+//         textoAlvo: TEXTO_ALVO,
+//       },
+//     );
+
+//     // 4) Aguarda o próximo campo (Código Indicador da Operação) ser atualizado
+//     await page.waitForFunction(
+//       (sel) => {
+//         const select = document.querySelector(sel);
+//         if (!select) return false;
+
+//         const values = Array.from(select.options).map((opt) => opt.value);
+//         return values.includes("030101");
+//       },
+//       { timeout: 15000 },
+//       NEXT_SELECT_SEL,
+//     );
+
+//     logger.info("✅ NBS inserido com sucesso!");
+//   } catch (error) {
+//     logger.error(`❌ Erro ao inserir NBS: ${error.message}`);
+//     throw error;
+//   }
+// }
+
+export async function inserirNBS(page) {
+  logger.info("⏳ Inserindo NBS...");
+
+  const SELECT_SEL = "#formEmissaoNFConvencional\\:listaNBS_input";
+  const LABEL_SEL = "#formEmissaoNFConvencional\\:listaNBS_label";
+  const NEXT_SELECT_SEL = "#formEmissaoNFConvencional\\:listaIndOp_input";
+
+  const VALUE_ALVO = "122041000";
+  const TEXTO_ALVO = "122041000 - Serviços educacionais de graduação";
+
+  try {
+    // 1) Espera o select existir
+    await page.waitForSelector(SELECT_SEL, { timeout: 30000 });
+
+    // 2) Espera a opção correta existir
+    await page.waitForFunction(
+      (sel, value) => {
+        const select = document.querySelector(sel);
+        if (!select) return false;
+        return Array.from(select.options).some((opt) => opt.value === value);
+      },
+      { timeout: 30000 },
+      SELECT_SEL,
+      VALUE_ALVO,
+    );
+
+    // 3) Aplica o valor e força o onchange do PrimeFaces
+    await page.evaluate(
+      ({ selectSel, labelSel, valueAlvo, textoAlvo }) => {
+        const select = document.querySelector(selectSel);
+        const label = document.querySelector(labelSel);
+
+        if (!select) {
+          throw new Error("Select de NBS não encontrado.");
+        }
+
+        select.value = valueAlvo;
+
+        if (label) {
+          label.textContent = textoAlvo;
+        }
+
+        if (typeof select.onchange === "function") {
+          select.onchange();
+        }
+
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      },
+      {
+        selectSel: SELECT_SEL,
+        labelSel: LABEL_SEL,
+        valueAlvo: VALUE_ALVO,
+        textoAlvo: TEXTO_ALVO,
+      },
+    );
+
+    // 4) Aguarda o AJAX terminar — espera listaIndOp ter mais de 1 opção carregada
+    await page.waitForFunction(
+      (sel) => {
+        const select = document.querySelector(sel);
+        if (!select) return false;
+        return select.options.length > 1;
+      },
+      { timeout: 15000 },
+      NEXT_SELECT_SEL,
+    );
+
+    // 5) Aguarda estabilizar antes de avançar
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    logger.info("✅ NBS inserido com sucesso!");
+  } catch (error) {
+    logger.error(`❌ Erro ao inserir NBS: ${error.message}`);
+    throw error;
+  }
+}
+
+export async function inserirCodigoIndicadorOperacao(page) {
+  logger.info("⏳ Inserindo Código Indicador da Operação...");
+
+  const LABEL_SEL = "#formEmissaoNFConvencional\\:listaIndOp_label";
+  const NEXT_SELECT_SEL = "#formEmissaoNFConvencional\\:listaClassTrib_input";
+  const VALUE_ALVO = "030101";
+
+  try {
+    // 1) Garante que o label está visível e rola até ele
+    await page.waitForSelector(LABEL_SEL, { visible: true, timeout: 15000 });
+    await page.evaluate((sel) => {
+      document.querySelector(sel)?.scrollIntoView({ block: "center" });
+    }, LABEL_SEL);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // 2) Clica no label para abrir o dropdown
+    await page.click(LABEL_SEL);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 3) Clica na opção correta
+    const clicou = await page.evaluate((value) => {
+      // Tenta li padrão do PrimeFaces
+      const liItems = document.querySelectorAll("li.ui-selectonemenu-item");
+      for (const item of liItems) {
+        if (item.textContent?.includes(value)) {
+          item.click();
+          return true;
+        }
+      }
+
+      // Tenta linhas de tabela
+      const trItems = document.querySelectorAll(
+        ".ui-selectonemenu-items-wrapper tr",
+      );
+      for (const item of trItems) {
+        if (item.textContent?.includes(value)) {
+          item.click();
+          return true;
+        }
+      }
+
+      // Tenta qualquer elemento com role="option"
+      const roleItems = document.querySelectorAll("[role='option']");
+      for (const item of roleItems) {
+        if (item.textContent?.includes(value)) {
+          item.click();
+          return true;
+        }
+      }
+
+      return false;
+    }, VALUE_ALVO);
+
+    if (!clicou) {
+      throw new Error(
+        `Opção ${VALUE_ALVO} não encontrada na lista do dropdown.`,
+      );
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 4) Aguarda o próximo campo ter opções (AJAX)
+    await page.waitForFunction(
+      (sel) => {
+        const select = document.querySelector(sel);
+        return select && select.options.length > 1;
+      },
+      { timeout: 20000 },
+      NEXT_SELECT_SEL,
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    logger.info("✅ Código Indicador da Operação inserido com sucesso!");
+  } catch (error) {
+    logger.error(
+      `❌ Erro ao inserir Código Indicador da Operação: ${error.message}`,
+    );
+    throw error;
+  }
+}
+
+export async function inserirClassificacaoTributaria(page) {
+  logger.info("⏳ Inserindo Classificação Tributária...");
+
+  const LABEL_SEL = "#formEmissaoNFConvencional\\:listaClassTrib_label";
+  const VALUE_ALVO = "200028";
+
+  try {
+    // 1) Garante que o label está visível e rola até ele
+    await page.waitForSelector(LABEL_SEL, { visible: true, timeout: 15000 });
+    await page.evaluate((sel) => {
+      document.querySelector(sel)?.scrollIntoView({ block: "center" });
+    }, LABEL_SEL);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // 2) Clica no label para abrir o dropdown
+    await page.click(LABEL_SEL);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 3) Clica na opção correta
+    const clicou = await page.evaluate((value) => {
+      // Tenta li padrão do PrimeFaces
+      const liItems = document.querySelectorAll("li.ui-selectonemenu-item");
+      for (const item of liItems) {
+        if (item.textContent?.includes(value)) {
+          item.click();
+          return true;
+        }
+      }
+
+      // Tenta linhas de tabela
+      const trItems = document.querySelectorAll(
+        ".ui-selectonemenu-items-wrapper tr",
+      );
+      for (const item of trItems) {
+        if (item.textContent?.includes(value)) {
+          item.click();
+          return true;
+        }
+      }
+
+      // Tenta qualquer elemento com role="option"
+      const roleItems = document.querySelectorAll("[role='option']");
+      for (const item of roleItems) {
+        if (item.textContent?.includes(value)) {
+          item.click();
+          return true;
+        }
+      }
+
+      return false;
+    }, VALUE_ALVO);
+
+    if (!clicou) {
+      throw new Error(
+        `Opção ${VALUE_ALVO} não encontrada na lista do dropdown.`,
+      );
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 4) Aguarda label confirmar seleção
+    await page.waitForFunction(
+      (sel, value) => {
+        return document.querySelector(sel)?.textContent?.includes(value);
+      },
+      { timeout: 15000 },
+      LABEL_SEL,
+      VALUE_ALVO,
+    );
+
+    logger.info("✅ Classificação Tributária inserida com sucesso!");
+  } catch (error) {
+    logger.error(
+      `❌ Erro ao inserir Classificação Tributária: ${error.message}`,
+    );
+    throw error;
+  }
+}
+
 export async function inserirMensagem(page, aluno) {
   logger.info(`💬 Inserindo mensagem...`);
   let dataEmissaoFinal = CONFIG.DATA_EMISSAO_MANUAL;
@@ -311,108 +628,6 @@ export async function inserirMensagem(page, aluno) {
     logger.info(`✅ Mensagem inserida: "${mensagem}"`);
   }
 }
-
-// export async function inserirValor(page, aluno) {
-//   // Lista de possíveis nomes para a coluna de valor
-//   const colunasPossiveis = [
-//     "B.C NF",
-//     "B.C ISS",
-//     "VALOR",
-//     "VALOR NF",
-//     "VALOR ISS",
-//     "VALORORIGINAL",
-//   ];
-
-//   // Tenta encontrar a primeira coluna que existe nos dados do aluno
-//   let valorNotaBruto;
-//   for (let coluna of colunasPossiveis) {
-//     if (
-//       aluno[coluna] !== undefined &&
-//       aluno[coluna] !== null &&
-//       aluno[coluna] !== ""
-//     ) {
-//       valorNotaBruto = aluno[coluna];
-//       break;
-//     }
-//   }
-
-//   if (valorNotaBruto === undefined) {
-//     logger.error(
-//       `❌ Valor da nota não encontrado para o aluno ${
-//         aluno.ALUNO
-//       }. Nenhuma coluna válida localizada (${colunasPossiveis.join(", ")})`,
-//     );
-//     return false;
-//   }
-
-//   // Conversão segura para número e formatação com 2 casas decimais
-//   const valorNumerico = parseFloat(valorNotaBruto.toString().replace(",", "."));
-
-//   if (isNaN(valorNumerico)) {
-//     logger.error(
-//       `❌ Valor inválido detectado para ${aluno.ALUNO}: ${valorNotaBruto}`,
-//     );
-//     return false;
-//   }
-
-//   if (valorNumerico === 0) {
-//     logger.warn(
-//       `⚠️ Valor da nota para o aluno ${aluno.ALUNO} é R$ 0,00. Pulando emissão.`,
-//     );
-//     return false;
-//   }
-
-//   // Garante que o valor tem duas casas decimais e formato com vírgula
-//   const valorFormatado = valorNumerico.toFixed(2).replace(".", ",");
-
-//   // Limpa o campo antes de digitar
-//   await page.click("#formEmissaoNFConvencional\\:vlrUnitario_input", {
-//     clickCount: 3,
-//   });
-//   await page.keyboard.press("Backspace");
-//   await page.keyboard.press("Delete");
-
-//   // Digita o valor lentamente
-//   for (let char of valorFormatado) {
-//     await page.type("#formEmissaoNFConvencional\\:vlrUnitario_input", char, {
-//       delay: 150,
-//     });
-//   }
-
-//   logger.info(`💵 Valor digitado: R$ ${valorFormatado}`);
-
-//   // Dispara evento de mudança
-//   await page.evaluate(() => {
-//     const input = document.querySelector(
-//       "#formEmissaoNFConvencional\\:vlrUnitario_input",
-//     );
-//     if (input) {
-//       input.dispatchEvent(new Event("change", { bubbles: true }));
-//     }
-//   });
-
-//   await new Promise((resolve) => setTimeout(resolve, 1000));
-
-//   // Valida o valor final no campo (tratando ponto de milhar)
-//   const valorNoCampo = await page.evaluate(() => {
-//     const input = document.querySelector(
-//       "#formEmissaoNFConvencional\\:vlrUnitario_input",
-//     );
-//     return input?.value.trim();
-//   });
-
-//   const esperadoNormalizado = valorFormatado.replace(/\./g, "");
-//   const campoNormalizado = valorNoCampo.replace(/\./g, "");
-
-//   if (campoNormalizado !== esperadoNormalizado) {
-//     logger.error(
-//       `❌ Divergência detectada ao digitar valor para ${aluno.ALUNO}: esperado "${valorFormatado}", mas o campo ficou "${valorNoCampo}"`,
-//     );
-//     return false;
-//   }
-
-//   return true;
-// }
 
 export async function inserirValor(page, aluno) {
   // ✅ Valor canônico vindo do planilha.js
