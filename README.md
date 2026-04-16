@@ -75,7 +75,8 @@ O único parâmetro que pode precisar de ajuste é a **URL do portal**, que vari
 ```js
 export const CONFIG = {
   // 🌐 URL da página de emissão do portal ISS Web do seu município
-  ISS_URL: "https://servicos.seumunicipio.gov.br/issweb/paginas/admin/notafiscal/convencional/emissaopadrao",
+  ISS_URL:
+    "https://servicos.seumunicipio.gov.br/issweb/paginas/admin/notafiscal/convencional/emissaopadrao",
 
   COOKIE_FILE: "cookies.json",
 
@@ -87,8 +88,8 @@ export const CONFIG = {
 
   // 🔧 modos de execução
   SKIP_CONFIRMATION: false, // true = não clica "SIM" no modal
-  TEST_MODE: false,         // true = processa só 1 registro
-  VERBOSE: false,           // true = logs detalhados
+  TEST_MODE: false, // true = processa só 1 registro
+  VERBOSE: false, // true = logs detalhados
 };
 ```
 
@@ -116,6 +117,7 @@ node server.js
 ```
 
 Após iniciar, acesse a interface pelo navegador. Por ela você:
+
 - Informa a **URL do portal** ISS Web do seu município
 - Informa o **usuário e senha** do portal
 - Seleciona a **planilha Excel** com os dados
@@ -125,13 +127,13 @@ Após iniciar, acesse a interface pelo navegador. Por ela você:
 
 ## 🔎 Modos & Flags
 
-| Opção                 | Efeito                                                                  |
-| --------------------- | ----------------------------------------------------------------------- |
-| `SKIP_CONFIRMATION`   | Simula emissão sem confirmar o modal final (não clica em **SIM**).      |
-| `TEST_MODE`           | Processa apenas o primeiro registro pendente (debug rápido).            |
-| `VERBOSE`             | Exibe logs estendidos (tentativas, detalhes do DOM, etc.).              |
-| `MAX_TENTATIVAS_CPF`  | Tenta preencher/validar CPF este número de vezes antes de **pular**.    |
-| `DATA_EMISSAO_MANUAL` | Força a data informada; vazio usa a do portal.                          |
+| Opção                 | Efeito                                                               |
+| --------------------- | -------------------------------------------------------------------- |
+| `SKIP_CONFIRMATION`   | Simula emissão sem confirmar o modal final (não clica em **SIM**).   |
+| `TEST_MODE`           | Processa apenas o primeiro registro pendente (debug rápido).         |
+| `VERBOSE`             | Exibe logs estendidos (tentativas, detalhes do DOM, etc.).           |
+| `MAX_TENTATIVAS_CPF`  | Tenta preencher/validar CPF este número de vezes antes de **pular**. |
+| `DATA_EMISSAO_MANUAL` | Força a data informada; vazio usa a do portal.                       |
 
 ---
 
